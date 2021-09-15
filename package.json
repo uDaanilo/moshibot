@@ -1,0 +1,32 @@
+{
+  "name": "moshi-bot",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "engines": {
+    "node": "14.x"
+  },
+  "dependencies": {
+    "@discordjs/opus": "^0.5.3",
+    "axios": "^0.21.1",
+    "date-fns": "^2.22.1",
+    "discord-ytdl-core": "^5.0.4",
+    "discord.js": "^12.5.3",
+    "dotenv": "^10.0.0",
+    "mongoose": "^5.13.0",
+    "scdl-core": "^1.0.11",
+    "spotify-url-info": "^2.2.3",
+    "youtube-sr": "^4.1.7",
+    "ytdl-core": "^4.9.1"
+  },
+  "scripts": {
+    "dev": "ts-node-dev src/index.ts",
+    "build": "tsc --build",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^8.2.0",
+    "@types/node": "^15.12.5",
+    "typescript": "^4.3.4"
+  }
+}
