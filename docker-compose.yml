@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+  bot:
+    build:
+      context: docker/
+    entrypoint: docker/entrypoint.sh
+    command: yarn dev
+    restart: always
+    volumes:
+      - .:/home/bot/moshi
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:4.4.4
+    restart: always
+    volumes:
+      - ./docker/mongo/data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+      - MONGO_INITDB_DATABASE=moshi
