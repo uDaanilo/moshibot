@@ -1,0 +1,17 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: ["develop"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3.6.0
+        with:
+          node-version: 17
+      - name: Lint code
+        run: yarn --non-interactive --silent --ignore-scripts --production=true && yarn lint
