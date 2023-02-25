@@ -30,7 +30,8 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
     ;(interaction as Command).args = interaction.values.join(" ")
 
-    if (interaction.customId === "tracks") interaction.guild.player.play(interaction as Command)
+    if (interaction.customId === "tracks")
+      interaction.guild.player.playOnVoiceChannel(interaction as Command)
   }
 
   if (interaction.isButton()) return buttonInteraction(interaction)

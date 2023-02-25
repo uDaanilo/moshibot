@@ -1,4 +1,3 @@
-import TrackSearcher from "./track_searcher"
 import Track from "./track"
 import {
   AudioPlayerStatus,
@@ -9,31 +8,39 @@ import {
   StreamType,
   VoiceConnection,
 } from "@discordjs/voice"
-import { Guild, GuildMember, TextChannel } from "discord.js"
+import {
+  CommandInteraction,
+  Guild,
+  GuildMember,
+  Message,
+  StringSelectMenuInteraction,
+  TextChannel,
+  User,
+} from "discord.js"
 import { PlayerController } from "./player_controller"
 import { PlayerMessageHandler } from "./player_message_handler"
 import { BasePlayer } from "./base_player"
 import { Command } from "../../types"
 import { PlayerInteractiveMessage } from "./player_interactive_message"
-import { Queue } from "./queue"
+import { YoutubeProvider } from "./providers/youtube"
+import { isUrl } from "./providers/helpers"
+import TrackSearcher from "./track_searcher"
+import { logger } from "../../utils/logger"
 
 class GuildPlayer extends BasePlayer {
-  public queue = new Queue()
-  public volume = 50
-  public playing = false
-  public shuffle = false
-  public repeat = false
-  public audioFilters: string[] = []
   public audioPlayer = createAudioPlayer({ debug: process.env.NODE_ENV === "development" })
-  public playerMessage?: PlayerInteractiveMessage
+  public interactiveMessage?: PlayerInteractiveMessage
+  public guild: Guild
+  public volume = 0
   private _controller = new PlayerController(this)
   private _voiceConnection: VoiceConnection
   private _audioResource: AudioResource = null
   private _messageHandler = new PlayerMessageHandler()
 
   constructor(guild: Guild) {
-    super(guild)
+    super()
 
+    this.guild = guild
     this.volume = this.guild.db.volume
 
     this.on("trackAdd", this._messageHandler.trackAdd)
@@ -46,15 +53,23 @@ class GuildPlayer extends BasePlayer {
     this.on("playlistAdd", this._messageHandler.playlistAdd)
     this.on("error", this._messageHandler.error)
 
-    this._hasInteractiveMessage()
+    this._setInteractiveMessage()
   }
 
-  public async play(msg: Command) {
+  public async playOnVoiceChannel(msg: Command) {
     if (msg.canDeferReply()) msg.deferReply()
 
     let tracks: Track[]
     try {
-      tracks = await TrackSearcher.search(msg)
+      let query = ""
+      if (msg instanceof Message) query = msg.args
+      else if (msg instanceof CommandInteraction) query = msg.options.get("nome").value as string
+      else if (msg instanceof StringSelectMenuInteraction) query = msg.values[0]
+
+      tracks = await this.searchAndAddToQueue(query, {
+        requester: msg.member.user as User,
+        command: msg,
+      })
     } catch (err) {
       this.emit("error", msg, err)
 
@@ -62,21 +77,14 @@ class GuildPlayer extends BasePlayer {
     }
 
     if (tracks.length > 1) this.emit("playlistAdd", msg, tracks)
-
-    if (!this.queue.empty) {
-      if (tracks.length === 1) this.emit("trackAdd", msg, tracks[0])
-      this.queue.add(tracks)
-
-      return
-    } else {
-      this.queue.add(tracks)
-
-      this._joinVoiceChannel(msg)
+    if (tracks.length === 1) this.emit("trackAdd", msg, tracks[0])
+    if (!this.playing) {
       this.playing = true
+      this._joinVoiceChannel(msg)
       this._voiceConnection.subscribe(this.audioPlayer)
-    }
 
-    this._playStream(msg)
+      this._playStream(msg)
+    }
   }
 
   public stop(msg?: Command, shouldReply = true) {
@@ -129,7 +137,10 @@ class GuildPlayer extends BasePlayer {
 
   private async _playStream(msg: Command) {
     const track = this.queue.nowPlaying
-    const stream = await track.stream()
+    const stream = await this.play().catch(async (err) => {
+      logger.error(err)
+      return await this._trackStreamErrorHandler(track)
+    })
 
     this._audioResource = createAudioResource(stream, {
       inlineVolume: true,
@@ -152,7 +163,7 @@ class GuildPlayer extends BasePlayer {
     this.audioFilters = null
 
     if (!this.repeat) this.queue.next()
-    if (this.queue.playingLast) {
+    if (this.queue.empty) {
       this.emit("finish")
 
       this._controller.stop()
@@ -166,8 +177,8 @@ class GuildPlayer extends BasePlayer {
     this._playStream(msg)
   }
 
-  private async _hasInteractiveMessage() {
-    if (!this.guild.db.playerChannel?.ch && !this.guild.db.playerChannel?.ch) return false
+  private async _setInteractiveMessage() {
+    if (!this.guild.db.playerChannel?.ch && !this.guild.db.playerChannel?.ch) return
 
     try {
       const interactiveChannel = (await this.guild.client.channels.fetch(
@@ -177,12 +188,16 @@ class GuildPlayer extends BasePlayer {
         this.guild.db.playerChannel.msg
       )
 
-      this.playerMessage = new PlayerInteractiveMessage(interactiveMessage, this)
-
-      return true
+      this.interactiveMessage = new PlayerInteractiveMessage(interactiveMessage, this)
     } catch (error) {}
+  }
 
-    return false
+  private async _trackStreamErrorHandler(track: Track) {
+    if (track.provider instanceof YoutubeProvider && !isUrl(track.searchQuery)) {
+      const scTrack = await TrackSearcher.search(track.searchQuery + " --sc", track.metadata)
+
+      return await scTrack[0].stream()
+    }
   }
 }
 
