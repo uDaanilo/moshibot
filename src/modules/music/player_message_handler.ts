@@ -18,7 +18,7 @@ export class PlayerMessageHandler implements PlayerEvents {
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
-      .setAuthor({ name: "Adicionada", iconURL: track.requester.avatarURL() })
+      .setAuthor({ name: "Adicionada", iconURL: track.metadata?.requester.avatarURL() })
       .setDescription(`[${track.title}](${track.url})`)
       .setThumbnail(track.thumbnail)
       .addFields([
@@ -42,7 +42,7 @@ export class PlayerMessageHandler implements PlayerEvents {
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
-      .setAuthor({ name: "Tocando agora", iconURL: track.requester.avatarURL() })
+      .setAuthor({ name: "Tocando agora", iconURL: track.metadata?.requester.avatarURL() })
 
       .setDescription(`[${track.title}](${track.url})`)
       .setThumbnail(track.thumbnail)

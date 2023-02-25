@@ -4,6 +4,7 @@ import { Readable, PassThrough } from "stream"
 import { YoutubeProvider } from "./providers/youtube"
 import { SoundcloudProvider } from "./providers/soundcloud"
 import { SpotifyProvider } from "./providers/spotify"
+import { Command } from "../../types"
 
 export interface TrackBase {
   title: string
@@ -12,6 +13,13 @@ export interface TrackBase {
   duration: number
   thumbnail: string
   author: string
+}
+
+export interface TrackMetadata {
+  requester?: User
+  msg?: Message
+  command?: Command
+  [k: string]: any
 }
 
 class Track {
@@ -24,18 +32,31 @@ class Track {
   public readonly requester: User
   public readonly msg: Message
   public readonly provider: YoutubeProvider | SoundcloudProvider | SpotifyProvider
+  public readonly metadata: TrackMetadata
   public readonly stream: (filter?, seek?) => Promise<Readable | PassThrough>
 
-  constructor({ title, searchQuery, url, duration, thumbnail, author, requester, msg, provider }) {
+  constructor({
+    title,
+    searchQuery,
+    url,
+    duration,
+    thumbnail,
+    author,
+    provider,
+    metadata,
+  }: TrackBase & {
+    provider: YoutubeProvider | SoundcloudProvider | SpotifyProvider
+    metadata: TrackMetadata
+  }) {
     this.title = title
     this.searchQuery = searchQuery
     this.url = url
     this.duration = duration
     this.thumbnail = thumbnail
     this.author = author
-    this.requester = requester
-    this.msg = msg
     this.provider = provider
+    this.metadata = metadata
+
     this.stream = async () => this.encode(await provider.getStreamByUrl(url))
   }
 

@@ -39,7 +39,8 @@ export default <BaseCommand>{
 
     if (!msg.guild.player) msg.guild.player = new GuildPlayer(msg.guild)
 
-    if ((msg as Message).cmd === "p" || isUrl(query)) return msg.guild.player.play(msg)
+    if ((msg as Message).cmd === "p" || isUrl(query))
+      return msg.guild.player.playOnVoiceChannel(msg)
 
     const tracks = await new YoutubeProvider().searchByKeyword(query, 5)
     if (tracks.length === 0) return msg.reply(":warning: **|** Nenhuma musica encontrada")

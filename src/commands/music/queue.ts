@@ -42,8 +42,8 @@ export default <BaseCommand>{
       ])
       .setTimestamp()
       .setFooter({
-        text: `${npTrack.requester.username}`,
-        iconURL: npTrack.requester.avatarURL(),
+        text: `${npTrack.metadata?.requester.username}`,
+        iconURL: npTrack.metadata?.requester.avatarURL(),
       })
 
     msg.reply({ embeds: [embed] })

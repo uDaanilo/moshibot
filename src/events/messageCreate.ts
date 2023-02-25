@@ -32,7 +32,7 @@ function messageCreate(msg: Message) {
     process.env.NODE_ENV === "production"
   ) {
     msg.args = msg.content
-    msg.guild.player.play(msg as Command)
+    msg.guild.player.playOnVoiceChannel(msg as Command)
   }
 
   if (!cmd) return

@@ -1,6 +1,6 @@
 FROM node:17 as builder
 
-RUN curl -o /usr/local/bin/yt-dlp -L https://github.com/yt-dlp/yt-dlp/releases/download/2022.11.11/yt-dlp
+RUN curl -o /usr/local/bin/yt-dlp -L https://github.com/yt-dlp/yt-dlp/releases/download/2023.02.17/yt-dlp
 
 WORKDIR /home/bot/moshi
 

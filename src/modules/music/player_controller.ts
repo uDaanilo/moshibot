@@ -6,6 +6,7 @@ export class PlayerController {
   constructor(private guildPlayer: GuildPlayer) {}
 
   public stop() {
+    this.guildPlayer.playing = false
     this.guildPlayer.queue.clear()
     this.guildPlayer.audioPlayer.stop()
   }
