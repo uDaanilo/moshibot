@@ -1,4 +1,5 @@
 import childProcess from "child_process"
+import { Readable } from "stream"
 
 export type Format = {
   format_id: string
@@ -107,12 +108,20 @@ class YoutubeDlp {
   }
 
   static async download(url: string) {
-    const args = ["--buffer-size", "16K", "-o", "-", url]
-    const { stdout, stderr } = this.ytdlp(args)
+    return new Promise<Readable>((resolve, reject) => {
+      const args = ["--buffer-size", "16K", "-o", "-", url]
+      const { stdout, stderr } = this.ytdlp(args)
+      let errorMessage = ""
 
-    stderr.on("data", (chunk) => console.error(chunk.toString()))
+      stderr.on("data", (chunk) => (errorMessage += chunk.toString()))
+      stderr.once("end", () => {
+        if (errorMessage) reject(errorMessage)
+      })
 
-    return stdout
+      stdout.once("readable", () => {
+        resolve(stdout)
+      })
+    })
   }
 }
 
