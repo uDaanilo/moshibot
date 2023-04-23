@@ -1,7 +1,6 @@
 import { ActivityOptions, ActivityType, Client } from "discord.js"
 import Guild from "../db/models/Guild"
 import { logger } from "../utils/logger"
-import childProcess from "child_process"
 import GuildPlayer from "../modules/music/guild_player"
 
 class Ready {
@@ -18,12 +17,6 @@ class Ready {
   }
 
   private setStatus(interval: number): void {
-    let lastCommitHash = ""
-
-    try {
-      lastCommitHash = childProcess.execSync("git rev-parse --short HEAD").toString().trim()
-    } catch (err) {}
-
     let status: ActivityOptions[] = [
       {
         name: "você",
@@ -39,7 +32,7 @@ class Ready {
       },
     ]
 
-    status = status.map((s) => ({ ...s, name: `${s.name} [${lastCommitHash}]` }))
+    status = status.map((s) => ({ ...s, name: `${s.name}` }))
 
     let i = 0
     this.client.user.setActivity(status[i].name, { type: status[i].type })
