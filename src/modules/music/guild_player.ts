@@ -4,6 +4,7 @@ import {
   AudioResource,
   createAudioPlayer,
   createAudioResource,
+  DiscordGatewayAdapterCreator,
   joinVoiceChannel,
   StreamType,
   VoiceConnection,
@@ -129,7 +130,7 @@ class GuildPlayer extends BasePlayer {
     const connection = joinVoiceChannel({
       channelId: voiceState.channel.id,
       guildId: this.guild.id,
-      adapterCreator: this.guild.voiceAdapterCreator,
+      adapterCreator: this.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
     })
 
     this._voiceConnection = connection
