@@ -5,6 +5,7 @@ import { YoutubeProvider } from "./providers/youtube"
 import { SoundcloudProvider } from "./providers/soundcloud"
 import { SpotifyProvider } from "./providers/spotify"
 import { Command } from "../../types"
+import { logger } from "../../utils/logger"
 
 export interface TrackBase {
   title: string
@@ -65,9 +66,12 @@ class Track {
       .audioCodec("libopus")
       .toFormat("opus")
       .on("error", (err) => {
-        if (err.message === "Output stream error: Premature close") return
+        if (err.message !== "Output stream closed") 
+          logger.error(err)
+        
 
-        console.error(err)
+        stream.destroy()
+        out.kill("SIGKILL")
       })
 
     if (filters) out.withAudioFilter(filters)
