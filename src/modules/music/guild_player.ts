@@ -1,5 +1,6 @@
 import Track from "./track"
 import {
+  AudioPlayerError,
   AudioPlayerStatus,
   AudioResource,
   createAudioPlayer,
@@ -153,11 +154,18 @@ class GuildPlayer extends BasePlayer {
 
     this.audioPlayer.once(AudioPlayerStatus.Playing, () => this._onAudioPlayerPlaying(track, msg))
     this.audioPlayer.once(AudioPlayerStatus.Idle, () => this._onAudioPlayerIdle(msg))
+    this.audioPlayer.once("error", (err) => this._onAudioPlayerError(err))
   }
 
   private _onAudioPlayerPlaying(track: Track, msg: Command) {
     if (!track.thumbnail || !track.author) return
     this.emit("playing", msg, track)
+  }
+
+  private _onAudioPlayerError(err: AudioPlayerError) {
+    if(err.message === "Premature close" && process.env.NODE_ENV !== "development") return
+
+    logger.error(err)
   }
 
   private _onAudioPlayerIdle(msg: Command) {
