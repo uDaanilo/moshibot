@@ -1,5 +1,6 @@
 import Track from "./track"
 import {
+  AudioPlayerError,
   AudioPlayerStatus,
   AudioResource,
   createAudioPlayer,
