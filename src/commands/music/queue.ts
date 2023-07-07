@@ -15,7 +15,7 @@ export default <BaseCommand>{
   },
   async run(msg) {
     const { player } = msg.guild
-    const npTrack = player.queue.nowPlaying
+    const npTrack = player.queue.playingNow
     const queueSpliced = [...player.queue.tracks]
     queueSpliced.splice(10)
 

@@ -4,15 +4,15 @@ import Track from "./track"
 class Queue {
   private _data: Track[] = []
 
-  public get playingLast() {
-    return this._data.length <= 1
+  public get isPlayingLast() {
+    return this._data.length === 1
   }
 
   public get empty() {
     return !this._data.length
   }
 
-  public get nowPlaying() {
+  public get playingNow() {
     return this._data[0]
   }
 
@@ -32,11 +32,21 @@ class Queue {
 
   public add(track: Track | Track[]) {
     if (Array.isArray(track)) {
-      this._data = this._data.concat(track)
+      this.bulkAdd(track)
       return
     }
 
+    if (!(track instanceof Track)) throw new Error("Invalid track")
+
     this._data.push(track)
+  }
+
+  public bulkAdd(tracks: Track[]) {
+    tracks.forEach((t, i) => {
+      if (!(t instanceof Track)) throw new Error(`Invalid track at index ${i}`)
+    })
+
+    this._data = this._data.concat(tracks)
   }
 
   public clear() {
@@ -53,7 +63,6 @@ class Queue {
 
   public setRandomTrackToFirst() {
     const rng = parseInt((Math.random() * (this._data.length - 1)).toString())
-
     this._data.unshift(this._data[rng])
     this._data.splice(rng + 1, 1)
   }

@@ -9,7 +9,7 @@ declare module "discord.js" {
 
   interface Guild extends Guild {
     db?: IGuild
-    player: GuildPlayer
+    player?: GuildPlayer
   }
 
   interface Message extends Message {

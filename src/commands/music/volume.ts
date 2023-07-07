@@ -34,6 +34,6 @@ export default <BaseCommand>{
     if (!volume)
       return msg.reply(`:loud_sound: **|** Volume atual: **${msg.guild.player.volume}%**`)
 
-    msg.guild.player.setVolume(msg, volume)
+    msg.guild.player.setVolume(volume)
   },
 }
