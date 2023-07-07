@@ -1,7 +1,5 @@
 FROM node:17 as builder
 
-RUN curl -o /usr/local/bin/yt-dlp -L https://github.com/yt-dlp/yt-dlp/releases/download/2023.02.17/yt-dlp
-
 WORKDIR /home/bot/moshi
 
 COPY . .
@@ -10,16 +8,17 @@ RUN yarn --omit=dev
 RUN yarn build
 RUN rm -rf src/
 
-FROM  node:17
+FROM node:17-alpine
 
-RUN apt-get update && \
-    apt-get install ffmpeg -y
+RUN apk update && \
+    apk add ffmpeg python3 libtool autoconf automake make g++
+
+RUN wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2023.02.17/yt-dlp
+    
+RUN chmod +x /usr/local/bin/yt-dlp
 
 WORKDIR /home/bot/moshi
 
-COPY --from=builder /usr/local/bin/yt-dlp /usr/local/bin/yt-dlp
 COPY --from=builder /home/bot/moshi .
-
-RUN chmod +x /usr/local/bin/yt-dlp
 
 CMD [ "yarn", "start" ]
