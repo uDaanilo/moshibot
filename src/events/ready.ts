@@ -1,7 +1,6 @@
 import { ActivityOptions, ActivityType, Client } from "discord.js"
 import Guild from "../db/models/Guild"
 import { logger } from "../utils/logger"
-import GuildPlayer from "../modules/music/guild_player"
 
 class Ready {
   constructor(private client: Client) {}
@@ -11,9 +10,7 @@ class Ready {
     logger.info(`[BOT] Logged as ${this.client.user.username}`)
 
     this.setStatus(15)
-    this.setDatabaseInfoIntoGuildCollection().then(() => {
-      this.setGuildPlayers()
-    })
+    this.setDatabaseInfoIntoGuildCollection()
   }
 
   private setStatus(interval: number): void {
@@ -67,12 +64,6 @@ class Ready {
         }
       })
     )
-  }
-
-  private setGuildPlayers() {
-    this.client.guilds.cache.forEach((g) => {
-      g.player = new GuildPlayer(g)
-    })
   }
 }
 

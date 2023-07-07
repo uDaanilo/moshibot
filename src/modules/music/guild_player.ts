@@ -9,8 +9,10 @@ import {
   joinVoiceChannel,
   StreamType,
   VoiceConnection,
+  VoiceConnectionStatus,
 } from "@discordjs/voice"
 import {
+  ChannelType,
   CommandInteraction,
   Guild,
   GuildMember,
@@ -19,7 +21,6 @@ import {
   TextChannel,
   User,
 } from "discord.js"
-import { PlayerController } from "./player_controller"
 import { PlayerMessageHandler } from "./player_message_handler"
 import { BasePlayer } from "./base_player"
 import { Command } from "../../types"
@@ -32,30 +33,35 @@ import { logger } from "../../utils/logger"
 class GuildPlayer extends BasePlayer {
   public audioPlayer = createAudioPlayer({ debug: process.env.NODE_ENV === "development" })
   public interactiveMessage?: PlayerInteractiveMessage
-  public guild: Guild
-  public volume = 0
-  private _controller = new PlayerController(this)
+  private _volume = 0
   private _voiceConnection: VoiceConnection
   private _audioResource: AudioResource = null
-  private _messageHandler = new PlayerMessageHandler()
+  private _messageHandler: PlayerMessageHandler = new PlayerMessageHandler()
+  private _skipped = false
+  private _textChannel: TextChannel
 
-  constructor(guild: Guild) {
+  constructor(public guild: Guild) {
     super()
 
-    this.guild = guild
-    this.volume = this.guild.db.volume
+    this._volume = this.guild.db.volume
 
-    this.on("trackAdd", this._messageHandler.trackAdd)
-    this.on("jump", this._messageHandler.jump)
-    this.on("volumeChange", this._messageHandler.volumeChange)
-    this.on("clearQueue", this._messageHandler.clearQueue)
-    this.on("playing", this._messageHandler.playing)
-    this.on("pause", this._messageHandler.pause)
-    this.on("resume", this._messageHandler.resume)
-    this.on("playlistAdd", this._messageHandler.playlistAdd)
-    this.on("error", this._messageHandler.error)
+    this.on("trackAdd", (track: Track) => this._messageHandler.trackAdd(track))
+    this.on("jump", (track) => this._messageHandler.jump(track))
+    this.on("volumeChange", (track, oldVol, newVol) =>
+      this._messageHandler.volumeChange(track, oldVol, newVol)
+    )
+    this.on("clearQueue", () => this._messageHandler.clearQueue())
+    this.on("playing", (track) => this._messageHandler.playing(track))
+    this.on("pause", (track) => this._messageHandler.pause(track))
+    this.on("resume", (track) => this._messageHandler.resume(track))
+    this.on("playlistAdd", (track) => this._messageHandler.playlistAdd(track))
+    this.on("error", (track) => this._messageHandler.error(track))
 
     this._setInteractiveMessage()
+  }
+
+  public get volume() {
+    return this._volume
   }
 
   public async playOnVoiceChannel(msg: Command) {
@@ -73,57 +79,52 @@ class GuildPlayer extends BasePlayer {
         command: msg,
       })
     } catch (err) {
-      this.emit("error", msg, err)
+      this.emit("error", err)
 
       return
     }
 
-    if (tracks.length > 1) this.emit("playlistAdd", msg, tracks)
-    if (tracks.length === 1) this.emit("trackAdd", msg, tracks[0])
+    if (tracks.length > 1) this.emit("playlistAdd", tracks)
+    if (tracks.length === 1) this.emit("trackAdd", tracks[0])
     if (!this.playing) {
+      if (msg.channel.type === ChannelType.GuildText) {
+        this._textChannel = msg.channel
+        this._messageHandler.setTextChannel(this._textChannel)
+      }
+
       this.playing = true
       this._joinVoiceChannel(msg)
       this._voiceConnection.subscribe(this.audioPlayer)
-
       this._playStream(msg)
     }
   }
 
-  public stop(msg?: Command, shouldReply = true) {
-    this._controller.stop()
-    this.emit("clearQueue", msg, shouldReply)
-  }
+  public async setVolume(vol: number) {
+    if (typeof vol !== "number") throw new Error("Volume must be a numeric type")
+    if (vol < 0) throw new Error("Volume must be major than 0")
 
-  public async setVolume(msg: Command, vol: number, shouldReply = true) {
-    const oldVol = this.volume
-    this._controller.setVolume(vol)
+    const oldVol = this._volume
+    this._volume = vol
     this._audioResource.volume.setVolumeLogarithmic(vol / 100)
-    this.emit("volumeChange", msg, oldVol, vol, shouldReply)
+    this.emit("volumeChange", this.queue.playingNow, oldVol, vol)
   }
 
-  public pause(msg: Command, shouldReply = true) {
-    this._controller.pause()
-    this.emit("pause", msg, shouldReply)
+  public pause() {
+    this.audioPlayer.pause()
+    this.emit("pause", this.queue.playingNow)
   }
 
-  public resume(msg: Command, shouldReply = true) {
-    this._controller.resume()
-    this.emit("resume", msg, shouldReply)
+  public resume() {
+    this.audioPlayer.unpause()
+
+    this.emit("resume", this.queue.playingNow)
   }
 
-  public jump(msg: Command, to: number = 1, shouldReply = true) {
-    const track = this._controller.jump(to)
-    this.emit("jump", msg, track, shouldReply)
-  }
-
-  public toggleRepeat(msg: Command, shouldReply = true) {
-    this._controller.toggleRepeat()
-    this.emit("repeat", msg, shouldReply)
-  }
-
-  public toggleShuffle(msg: Command, shouldReply = true) {
-    this._controller.toggleShuffle()
-    this.emit("shuffle", msg, shouldReply)
+  public jump(to = 1) {
+    const track = super.jump(to)
+    this.audioPlayer.stop()
+    this._skipped = true
+    return track
   }
 
   private _joinVoiceChannel(msg: Command) {
@@ -135,10 +136,13 @@ class GuildPlayer extends BasePlayer {
     })
 
     this._voiceConnection = connection
+    this._voiceConnection.on("stateChange", (_, newState) => {
+      if (newState.status === VoiceConnectionStatus.Disconnected && this.playing) this.disconnect()
+    })
   }
 
   private async _playStream(msg: Command) {
-    const track = this.queue.nowPlaying
+    const track = this.queue.playingNow
     const stream = await this.play().catch(async (err) => {
       logger.error(err)
       return await this._trackStreamErrorHandler(track)
@@ -152,18 +156,18 @@ class GuildPlayer extends BasePlayer {
 
     this.audioPlayer.play(this._audioResource)
 
-    this.audioPlayer.once(AudioPlayerStatus.Playing, () => this._onAudioPlayerPlaying(track, msg))
+    this.audioPlayer.once(AudioPlayerStatus.Playing, () => this._onAudioPlayerPlaying(track))
     this.audioPlayer.once(AudioPlayerStatus.Idle, () => this._onAudioPlayerIdle(msg))
     this.audioPlayer.once("error", (err) => this._onAudioPlayerError(err))
   }
 
-  private _onAudioPlayerPlaying(track: Track, msg: Command) {
+  private _onAudioPlayerPlaying(track: Track) {
     if (!track.thumbnail || !track.author) return
-    this.emit("playing", msg, track)
+    this.emit("playing", track)
   }
 
   private _onAudioPlayerError(err: AudioPlayerError) {
-    if(err.message === "Premature close" && process.env.NODE_ENV !== "development") return
+    if (err.message === "Premature close" && process.env.NODE_ENV !== "development") return
 
     logger.error(err)
   }
@@ -171,19 +175,18 @@ class GuildPlayer extends BasePlayer {
   private _onAudioPlayerIdle(msg: Command) {
     this.audioFilters = null
 
-    if (!this.repeat) this.queue.next()
-    if (this.queue.empty) {
-      this.emit("finish")
-
-      this._controller.stop()
-      this._voiceConnection.disconnect()
-
-      return
-    }
-
+    if (!this.repeat && !this._skipped) this.queue.next()
+    this._skipped = false
+    if (this.queue.empty) return this.disconnect()
     if (this.shuffle && !this.repeat) this.queue.setRandomTrackToFirst()
 
     this._playStream(msg)
+  }
+
+  public disconnect() {
+    this.emit("finish")
+    this.stop()
+    this._voiceConnection.disconnect()
   }
 
   private async _setInteractiveMessage() {

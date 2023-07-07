@@ -35,11 +35,11 @@ export default <BaseCommand>{
       if (index >= player.queue.tracks.length)
         return msg.reply(":warning: **|** Argumento invalido")
 
-      player.jump(msg, index)
+      player.jump(index)
 
       return
     }
 
-    player.jump(msg)
+    player.jump()
   },
 }

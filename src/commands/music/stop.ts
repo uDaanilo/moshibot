@@ -8,6 +8,6 @@ export default <BaseCommand>{
     if (!isOnVoiceChannel(msg))
       return msg.reply(":warning: **|** Voce deve entrar em um canal de voz primeiro")
 
-    msg.guild.player.stop(msg)
+    msg.guild.player.stop()
   },
 }

@@ -27,12 +27,12 @@ export class PlayerInteractiveMessage {
   }
 
   private async update() {
-    if (this._guildPlayer && this._guildPlayer.queue.tracks.length) this.playing()
-    else this.emptyQueue()
+    if (this._guildPlayer && this._guildPlayer.queue.tracks.length) this.playingMessage()
+    else this.emptyQueueMessage()
   }
 
-  private playing() {
-    const track = this._guildPlayer.queue.nowPlaying
+  private playingMessage() {
+    const track = this._guildPlayer.queue.playingNow
 
     const embed = new EmbedBuilder()
       .setImage(track.thumbnail)
@@ -81,7 +81,7 @@ export class PlayerInteractiveMessage {
     this._message.edit({ embeds: [embed] }).catch(console.error)
   }
 
-  private emptyQueue() {
+  private emptyQueueMessage() {
     const embed = new EmbedBuilder()
       .setImage(this._guildPlayer.guild.client.user.avatarURL({ size: 512 }))
       .setColor(palette.embed.main)

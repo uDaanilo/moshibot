@@ -25,26 +25,26 @@ export default function (btn: ButtonInteraction) {
 
   if (btn.customId === "playpause") {
     if (player.playing) {
-      player.pause(btn as Command, false)
+      player.pause()
       btn.reply(`⏸ **|** <@${btn.member.user.id}>, Musica pausada!`)
     } else {
-      player.resume(btn as Command, false)
+      player.resume()
       btn.reply(`:arrow_forward: **|** <@${btn.member.user.id}>, Musica resumida!`)
     }
   }
 
   if (btn.customId === "next") {
-    player.jump(btn as Command, 1, false)
+    player.jump()
     btn.reply(`:fast_forward: **|** <@${btn.member.user.id}> pulou de musica`)
   }
 
   if (btn.customId === "stop") {
-    player.stop(btn as Command, false)
+    player.stop()
     btn.reply(`:fast_forward: **|** <@${btn.member.user.id}> excluiu a playlist`)
   }
 
   if (btn.customId === "shuffle") {
-    player.toggleShuffle(btn as Command, false)
+    player.toggleShuffle()
     btn.reply(
       `:twisted_rightwards_arrows: **|** <@${btn.member.user.id}> ${
         player.shuffle ? "ativou" : "desativou"
@@ -53,7 +53,7 @@ export default function (btn: ButtonInteraction) {
   }
 
   if (btn.customId === "repeat") {
-    player.toggleRepeat(btn as Command, false)
+    player.toggleRepeat()
     btn.reply(
       `:repeat: **|** <@${btn.member.user.id}> ${
         player.repeat ? "ativou" : "desativou"
