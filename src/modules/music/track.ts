@@ -66,9 +66,7 @@ class Track {
       .audioCodec("libopus")
       .toFormat("opus")
       .on("error", (err) => {
-        if (err.message !== "Output stream closed") 
-          logger.error(err)
-        
+        if (err.message !== "Output stream closed") logger.error(err)
 
         stream.destroy()
         out.kill("SIGKILL")

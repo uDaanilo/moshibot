@@ -1,20 +1,36 @@
 import formatDuration from "../../utils/formatDuration"
 import Track from "./track"
-import { Message, EmbedBuilder } from "discord.js"
+import { Message, EmbedBuilder, TextChannel } from "discord.js"
 import { palette } from "../../config"
 import { Command } from "../../types"
 import { logger } from "../../utils/logger"
 import { PlayerEvents } from "./player_event_emitter"
-import { TrackNotfound } from "./track_searcher"
-
-function reply(msg: Command, options: any) {
-  if (msg instanceof Message) msg.reply(options)
-  else msg.editReply(options)
-}
 
 export class PlayerMessageHandler implements PlayerEvents {
-  public trackAdd(msg: Command, track: Track, shouldReply = true): void {
-    if (!shouldReply) return
+  constructor(private _textChannel?: TextChannel) {}
+
+  public setTextChannel(textChannel: TextChannel) {
+    this._textChannel = textChannel
+  }
+
+  private reply(msg: Command, options?: any) {
+    if (!msg && this._textChannel) {
+      this._textChannel.send(options)
+      return
+    } else if (!msg && !this._textChannel) {
+      return
+    }
+
+    if (msg instanceof Message) msg.reply(options)
+    else msg.editReply(options)
+  }
+
+  private _getCommandFromTrack(track: Track) {
+    return track.metadata.command
+  }
+
+  public trackAdd(track: Track): void {
+    const cmd = this._getCommandFromTrack(track)
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
@@ -34,16 +50,15 @@ export class PlayerMessageHandler implements PlayerEvents {
         },
       ])
 
-    reply(msg, { embeds: [embed] })
+    this.reply(cmd, { embeds: [embed] })
   }
 
-  public playing(msg: Command, track: Track, shouldReply = true): void {
-    if (!shouldReply) return
+  public playing(track: Track): void {
+    const cmd = this._getCommandFromTrack(track)
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
       .setAuthor({ name: "Tocando agora", iconURL: track.metadata?.requester.avatarURL() })
-
       .setDescription(`[${track.title}](${track.url})`)
       .setThumbnail(track.thumbnail)
       .addFields([
@@ -59,51 +74,54 @@ export class PlayerMessageHandler implements PlayerEvents {
         },
       ])
 
-    reply(msg, { embeds: [embed] })
+    this.reply(cmd, { embeds: [embed] })
   }
 
-  public jump(msg: Command, track: Track, shouldReply = true): void {
-    if (!shouldReply) return
+  public jump(track: Track): void {
+    const cmd = this._getCommandFromTrack(track)
 
-    reply(msg, `⏭️ **|** Pulando para **${track.title}**`)
+    this.reply(cmd, `⏭️ **|** Pulando para **${track.title}**`)
   }
 
-  public pause(msg: Command, shouldReply = true): void {
-    if (!shouldReply) return
+  public pause(track: Track): void {
+    const cmd = this._getCommandFromTrack(track)
 
-    reply(msg, "⏸ **|** Musica pausada!")
+    this.reply(cmd, "⏸ **|** Musica pausada!")
   }
 
-  public resume(msg: Command, shouldReply = true): void {
-    if (!shouldReply) return
+  public resume(track: Track): void {
+    const cmd = this._getCommandFromTrack(track)
 
-    reply(msg, ":arrow_forward: **|** Musica resumida!")
+    this.reply(cmd, ":arrow_forward: **|** Musica resumida!")
   }
 
-  public volumeChange(msg: Command, oldVol: number, newVol: number, shouldReply = true): void {
-    if (!shouldReply) return
+  public volumeChange(track: Track, oldVol: number, newVol: number): void {
+    const cmd = this._getCommandFromTrack(track)
 
-    reply(msg, `:loud_sound: **|** Volume alterado para **${newVol}%**`)
+    const emoji = newVol > oldVol ? ":loud_sound:" : ":sound:"
+    this.reply(cmd, `${emoji} **|** Volume alterado para **${newVol}%**`)
   }
 
-  public repeat(msg: Command, shouldReply = true): void {
-    if (!shouldReply) return
+  public repeat(track: Track): void {
+    const cmd = this._getCommandFromTrack(track)
 
-    reply(
-      msg,
-      `:repeat: **|** Modo replay **${msg.guild.player.repeat ? "ativado" : "desativado"}**`
+    this.reply(
+      cmd,
+      `:repeat: **|** Modo replay **${cmd.guild.player.repeat ? "ativado" : "desativado"}**`
     )
   }
 
-  public shuffle(msg: Command, shouldReply = true): void {
-    if (!shouldReply) return
+  public shuffle(track: Track): void {
+    const cmd = this._getCommandFromTrack(track)
 
-    reply(msg, `🔁 **|** Modo repeticao **${msg.guild.player.shuffle ? "ativado" : "desativado"}**`)
+    this.reply(
+      cmd,
+      `🔁 **|** Modo repeticao **${cmd.guild.player.shuffle ? "ativado" : "desativado"}**`
+    )
   }
 
-  public playlistAdd(msg: Command, tracks: Track[], shouldReply = true): void {
-    if (!shouldReply) return null
-
+  public playlistAdd(tracks: Track[]): void {
+    const cmd = this._getCommandFromTrack(tracks[0])
     const queueSpliced = [...tracks]
     queueSpliced.splice(10)
 
@@ -130,28 +148,14 @@ export class PlayerMessageHandler implements PlayerEvents {
         },
       ])
 
-    reply(msg, { embeds: [embed] })
+    this.reply(cmd, { embeds: [embed] })
   }
 
-  public clearQueue(msg: Command, shouldReply = true): void {
-    if (!shouldReply) return
-
-    msg.channel.send("⏹️ **|** Playlist excluida")
+  public clearQueue(): void {
+    this._textChannel.send("⏹️ **|** Playlist excluida")
   }
 
-  public error(msg: Command, err: any): void {
-    if (err instanceof TrackNotfound) {
-      if (msg instanceof Message) {
-        msg.reply(":warning: **|** Musica nao encontrada")
-        return
-      } else {
-        msg.editReply(":warning: **|** Musica nao encontrada")
-        return
-      }
-    }
-
-    msg.reply(`:interrobang: **|** Ocorreu um erro inesperado! \`\`\`${err?.message}\`\`\``)
-
+  public error(err: any): void {
     logger.error(err)
   }
 

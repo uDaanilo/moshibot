@@ -12,6 +12,6 @@ export default <BaseCommand>{
     if (!queueExists(msg))
       return msg.reply(":warning: **|** Nao ha nenhuma musica na playlist para poder pausar")
 
-    msg.guild.player.pause(msg)
+    msg.guild.player.pause()
   },
 }

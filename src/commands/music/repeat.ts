@@ -13,6 +13,6 @@ export default <BaseCommand>{
     if (!queueExists(msg))
       return msg.reply(":warning: **|** Nao ha nenhuma musica na playlist para poder usar isso")
 
-    msg.guild.player.toggleRepeat(msg)
+    msg.guild.player.toggleRepeat()
   },
 }
