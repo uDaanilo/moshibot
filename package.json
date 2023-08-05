@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "license": "MIT",
   "engines": {
-    "node": "17.x"
+    "node": ">=17.x"
   },
   "author": {
     "name": "uDaanilo",
