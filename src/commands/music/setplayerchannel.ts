@@ -1,15 +1,21 @@
 import { Message, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle } from "discord.js"
 import { palette } from "../../config"
 import Guild from "../../db/models/Guild"
-import { BaseCommand } from "../../types/global"
 import { logger } from "../../utils/logger"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "setplayerchannel",
-  description: "Seta um player de musica que atualiza em tempo real",
-  async run(msg) {
+export default class SetPlayerChannelCommand extends BaseCommand {
+  constructor() {
+    super({
+      name: "setplayerchannel",
+      description: "Seta um player de musica que atualiza em tempo real",
+    })
+  }
+
+  async run(userInteraction: UserInteraction) {
     const embed = new EmbedBuilder()
-      .setImage(msg.client.user.avatarURL({ size: 1024 }))
+      .setImage(userInteraction.interaction.client.user.avatarURL({ size: 1024 }))
       .setColor(palette.embed.main)
 
     const stopButton = new ButtonBuilder()
@@ -46,22 +52,28 @@ export default <BaseCommand>{
     ])
 
     // @ts-ignore
-    msg.reply({ embeds: [embed], components: [row], fetchReply: true }).then(async (msg) => {
-      msg = msg as Message
+    userInteraction.reply({ embeds: [embed], components: [row] }).then(async (msg) => {
+      const channelId = msg instanceof Message ? msg.channelId : msg.interaction.channelId
+      const messageId = msg instanceof Message ? msg.id : (await msg.fetch()).id
 
       try {
         await Guild.updateOne(
-          { id: msg.guild.id },
-          { playerChannel: { ch: msg.channel.id, msg: msg.id } }
+          { id: userInteraction.interaction.guild.id },
+          { playerChannel: { ch: channelId, msg: messageId } }
         )
-        const guildDb = await Guild.findOne({ id: msg.guild.id })
+        const guildDb = await Guild.findOne({ id: userInteraction.interaction.guild.id })
 
-        msg.guild.db = guildDb
+        userInteraction.interaction.guild.db = guildDb
 
-        msg.client.guilds.cache.set(msg.guild.id, msg.guild)
+        userInteraction.interaction.client.guilds.cache.set(
+          userInteraction.interaction.guild.id,
+          userInteraction.interaction.guild
+        )
+
+        userInteraction.interaction.guild.player.reloadInteractiveMessage()
       } catch (err) {
         logger.error(err)
       }
     })
-  },
+  }
 }

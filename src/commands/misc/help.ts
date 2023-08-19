@@ -1,19 +1,26 @@
 import { EmbedField, EmbedBuilder } from "discord.js"
-import { BaseCommand } from "../../types/global"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "help",
-  alias: "commands",
-  description: "Mostra uma lista com todos os comandos e seus atributos",
-  async run(msg) {
-    const { commands } = msg.client.commandsHandler
+export default class HelpCommand extends BaseCommand {
+  constructor() {
+    super({
+      name: "help",
+      alias: "commands",
+      description: "Exibe uma lista com todos os comandos e seus atributos",
+    })
+  }
+
+  public async run(userInteraction: UserInteraction): Promise<void> {
+    const { interaction } = userInteraction
+    const { commands } = interaction.client.commandsHandler
 
     const embed = new EmbedBuilder()
       .setTitle("Comandos")
-      .setThumbnail(msg.client.user.avatarURL())
+      .setThumbnail(interaction.client.user.avatarURL())
       .setColor("#7289DA")
       .setFooter({
-        text: `Prefixo: ${msg.guild.db.prefix}`,
+        text: `Prefixo: ${interaction.guild.db.prefix}`,
       }).setDescription(`
         <> Argumentos requiridos
         [] Argumentos opcionais
@@ -37,6 +44,6 @@ export default <BaseCommand>{
     })
 
     embed.addFields(embedFields)
-    msg.reply({ embeds: [embed] })
-  },
+    userInteraction.reply({ embeds: [embed] })
+  }
 }

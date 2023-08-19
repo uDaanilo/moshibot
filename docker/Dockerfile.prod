@@ -13,7 +13,7 @@ FROM node:17-alpine
 RUN apk update && \
     apk add ffmpeg python3 libtool autoconf automake make g++
 
-RUN wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2023.02.17/yt-dlp
+RUN wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2023.07.06/yt-dlp
     
 RUN chmod +x /usr/local/bin/yt-dlp
 

@@ -4,8 +4,8 @@ import { Readable, PassThrough } from "stream"
 import { YoutubeProvider } from "./providers/youtube"
 import { SoundcloudProvider } from "./providers/soundcloud"
 import { SpotifyProvider } from "./providers/spotify"
-import { Command } from "../../types"
 import { logger } from "../../utils/logger"
+import { UserInteraction } from "../../commands/userInteraction"
 
 export interface TrackBase {
   title: string
@@ -19,7 +19,7 @@ export interface TrackBase {
 export interface TrackMetadata {
   requester?: User
   msg?: Message
-  command?: Command
+  userInteraction?: UserInteraction
   [k: string]: any
 }
 
@@ -30,8 +30,6 @@ class Track {
   public readonly duration: number
   public readonly thumbnail: string
   public readonly author: string
-  public readonly requester: User
-  public readonly msg: Message
   public readonly provider: YoutubeProvider | SoundcloudProvider | SpotifyProvider
   public readonly metadata: TrackMetadata
   public readonly stream: (filter?, seek?) => Promise<Readable | PassThrough>

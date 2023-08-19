@@ -2,11 +2,11 @@ import { readdirSync } from "fs"
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { REST } from "@discordjs/rest"
 import { Routes } from "discord-api-types/v9"
-import { CommandInteraction, Message } from "discord.js"
 import { logger } from "../utils/logger"
-import { BaseCommand, InteractionOptionType } from "../types/global"
-import { Command } from "../types"
+import { InteractionOptionType } from "../types/global"
 import { join } from "path"
+import { UserInteraction } from "./userInteraction"
+import { BaseCommand } from "./baseCommand"
 
 class CommandsHandler {
   public modules = readdirSync(`${__dirname}`).filter(
@@ -20,18 +20,18 @@ class CommandsHandler {
     this.registerSlashCommands()
   }
 
-  private registerCommands() {
-    this.modules.forEach((module) => {
-      const cmds = readdirSync(join(__dirname, module))
-      const cmdsObjects: BaseCommand[] = []
+  private async registerCommands() {
+    for (const module of this.modules) {
+      const cmdFiles = readdirSync(join(__dirname, module))
+      const cmds: BaseCommand[] = []
 
-      cmds.forEach((cmd) => {
-        const cmdObj = require(join(__dirname, module, cmd))
-        cmdsObjects.push(cmdObj.default)
-      })
+      for (const cmdFilename of cmdFiles) {
+        const CommandConstructor = (await import(join(__dirname, module, cmdFilename))).default
+        cmds.push(new CommandConstructor())
+      }
 
-      this.commands.set(module, cmdsObjects)
-    })
+      this.commands.set(module, cmds)
+    }
   }
 
   private registerSlashCommands() {
@@ -147,40 +147,59 @@ class CommandsHandler {
     }
   }
 
-  public handle(command: Message | CommandInteraction) {
+  public async handle(userInteraction: UserInteraction) {
+    const { module, command } = this.getCommandByName(userInteraction.commandName)
+
+    if (!command) return
+    if (module === "dev" && userInteraction.interaction.member.user.id !== process.env.OWNER_ID)
+      return
+
+    try {
+      if (Array.isArray(command.before) && command.before.length > 0) {
+        const cancelExecution = await this.runBeforeMiddlewares(command, userInteraction)
+        if (cancelExecution) return
+      }
+
+      userInteraction.options = command.extractOptionsFromUserInteraction(userInteraction)
+      await command.run(userInteraction)
+    } catch (err) {
+      logger.error(err)
+      userInteraction.reply(":bangbang: **|** Ocorreu um erro ao executar o comando :/")
+    }
+  }
+
+  public getCommandByName(name: string): { module: string; command: BaseCommand } | null {
+    let command: BaseCommand | undefined
+    let commandModule: string | undefined
+
     this.commands.forEach((commands, module) => {
-      commands.forEach(async (cmd) => {
-        const commandName = this._commandName(command)
-
-        if (module === "dev" && command.member.user.id !== process.env.OWNER_ID) return
-
-        if (commandName === cmd.name || (cmd.alias && commandName === cmd.alias)) {
-          ;(command as Command).canDeferReply = () => {
-            if (command instanceof CommandInteraction) return true
-
-            return false
-          }
-
-          if (cmd.before) {
-            await cmd.before(command as Command, () => {
-              cmd.run(command as Command)
-            })
-
-            return
-          }
-
-          cmd.run(command as Command)
+      commands.forEach((cmd) => {
+        if (name === cmd.name || (cmd.alias && name === cmd.alias)) {
+          command = cmd
+          commandModule = module
         }
       })
     })
+
+    return {
+      module: commandModule,
+      command,
+    }
   }
 
-  private _commandName(command) {
-    return command instanceof CommandInteraction && command.isCommand()
-      ? command.commandName.toLowerCase()
-      : command instanceof Message
-      ? command.cmd.toLowerCase()
-      : ""
+  private async runBeforeMiddlewares(command: BaseCommand, userInteraction: UserInteraction) {
+    let cancelExecution = false
+
+    for (const before of command.before) {
+      const shouldRunNext = await before(userInteraction)
+
+      if (!shouldRunNext) {
+        cancelExecution = true
+        break
+      }
+    }
+
+    return cancelExecution
   }
 }
 
