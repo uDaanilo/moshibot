@@ -1,18 +1,19 @@
-import { BaseCommand } from "../../types/global"
-import isOnVoiceChannel from "../../utils/isOnVoiceChannel"
-import queueExists from "../../utils/queueExists"
+import { isOnVoiceChannel } from "../../utils/isOnVoiceChannel"
+import { queueExistsOnGuild } from "../../utils/queueExistsOnGuild"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "repeat",
-  alias: "loop",
-  description: "Ativa o modo repeticao",
-  async run(msg) {
-    if (!isOnVoiceChannel(msg))
-      return msg.reply(":warning: **|** Voce deve entrar em um canal de voz primeiro")
+export default class RepeatCommand extends BaseCommand {
+  constructor() {
+    super({
+      name: "repeat",
+      alias: "loop",
+      description: "Ativa o modo repeticao",
+      before: [isOnVoiceChannel, queueExistsOnGuild],
+    })
+  }
 
-    if (!queueExists(msg))
-      return msg.reply(":warning: **|** Nao ha nenhuma musica na playlist para poder usar isso")
-
-    msg.guild.player.toggleRepeat()
-  },
+  async run(userInteraction: UserInteraction) {
+    userInteraction.interaction.guild.player.toggleRepeat()
+  }
 }

@@ -1,49 +1,57 @@
-import { BaseCommand, InteractionOptionType } from "../../types/global"
-
-import { CommandInteraction, GuildMember, Message, PermissionFlagsBits } from "discord.js"
-import Guild from "../../db/models/Guild"
+import { InteractionOptionType } from "../../types/global"
+import { GuildMember, PermissionFlagsBits } from "discord.js"
 import { logger } from "../../utils/logger"
+import { BaseCommand } from "../baseCommand"
+import Guild from "../../db/models/Guild"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "prefix",
-  args: "[prefixo]",
-  description: "Muda o prefixo do bot nesse servidor",
-  options: [
-    {
-      name: "prefixo",
-      description: "Novo prefixo",
-      type: InteractionOptionType.STRING,
-    },
-  ],
-  async run(msg) {
-    let prefix
+export type PrefixCommandOptions = {
+  prefixo: string
+}
 
-    if (msg instanceof CommandInteraction) prefix = msg.options.get("prefixo")
-    else prefix = (msg as Message).args
+export default class PrefixCommand extends BaseCommand<PrefixCommandOptions> {
+  constructor() {
+    super({
+      name: "prefix",
+      args: "[prefixo]",
+      description: "Muda o prefixo do bot nesse servidor",
+      options: [
+        {
+          name: "prefixo",
+          description: "Novo prefixo",
+          type: InteractionOptionType.STRING,
+        },
+      ],
+    })
+  }
 
-    if (!prefix) return msg.reply(`:gear: **|** Prefixo atual: ${msg.guild.db.prefix}`)
+  public async run(userInteraction: UserInteraction<PrefixCommandOptions>): Promise<any> {
+    const { interaction } = userInteraction
+    const { prefixo: prefix } = userInteraction.options
 
-    if (!(msg.member as GuildMember).permissions.has(PermissionFlagsBits.ManageMessages)) {
-      return msg.reply(
+    if (!prefix)
+      return userInteraction.reply(`:gear: **|** Prefixo atual: ${interaction.guild.db.prefix}`)
+
+    if (!(interaction.member as GuildMember).permissions.has(PermissionFlagsBits.ManageMessages)) {
+      return userInteraction.reply(
         ":warning: **|** Você não tem permissão para alterar o prefixo desse servidor!"
       )
     }
-
     if (prefix.length > 2)
-      return msg.reply(":gear: **|** O prefixo deve conter no máximo 2 caracteres")
+      return userInteraction.reply(":gear: **|** O prefixo deve conter no máximo 2 caracteres")
 
     try {
-      await Guild.updateOne({ id: msg.guild.id }, { prefix })
-      const updatedGuild = await Guild.findOne({ id: msg.guild.id })
+      await Guild.updateOne({ id: interaction.guild.id }, { prefix })
+      const updatedGuild = await Guild.findOne({ id: interaction.guild.id })
 
-      msg.guild.db = updatedGuild
+      interaction.guild.db = updatedGuild
 
-      msg.client.guilds.cache.set(msg.guild.id, msg.guild)
+      interaction.client.guilds.cache.set(interaction.guild.id, interaction.guild)
 
-      msg.reply(`:gear: **|** Prefixo alterado para **${prefix}**`)
+      userInteraction.reply(`:gear: **|** Prefixo alterado para **${prefix}**`)
     } catch (err) {
       logger.error(err)
-      msg.reply(":bangbang: **|** Ocorreu um erro!")
+      userInteraction.reply(":bangbang: **|** Ocorreu um erro!")
     }
-  },
+  }
 }

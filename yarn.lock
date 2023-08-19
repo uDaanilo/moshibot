@@ -2104,6 +2104,11 @@ optionator@^0.9.1:
     type-check "^0.4.0"
     word-wrap "^1.2.3"
 
+opusscript@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/opusscript/-/opusscript-0.1.0.tgz#0d8db7b5202b91c75d9c511f2621c5c93e9b0055"
+  integrity sha512-Jc1d2u7AutNcUCoSpshhStW4CVAZXqh8n832ZTFUwZowof+xq2JW4umsWwAUOdtczn2z0UJMkUoTYBFT8qto9g==
+
 p-limit@^3.0.2:
   version "3.1.0"
   resolved "https://registry.npmjs.org/p-limit/-/p-limit-3.1.0.tgz"

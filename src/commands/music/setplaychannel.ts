@@ -1,26 +1,34 @@
 import { TextChannel } from "discord.js"
 import Guild from "../../db/models/Guild"
-import { BaseCommand } from "../../types/global"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "setplaychannel",
-  description: "Seta um canal como canal de play",
-  async run(msg) {
+export default class SetPlayChannelCommand extends BaseCommand {
+  constructor() {
+    super({
+      name: "setplaychannel",
+      description: "Seta um canal como canal de play",
+    })
+  }
+
+  async run(userInteraction: UserInteraction) {
     try {
       await Guild.updateOne(
-        { id: msg.guild.id },
+        { id: userInteraction.interaction.guild.id },
         {
           $set: {
-            playChannelId: msg.channel.id,
+            playChannelId: userInteraction.interaction.channel.id,
           },
         }
       )
 
-      msg.guild.db.playChannelId = msg.channel.id
+      userInteraction.interaction.guild.db.playChannelId = userInteraction.interaction.channel.id
 
-      msg.reply(`Canal de play setado para \`${(msg.channel as TextChannel).name}\``)
+      userInteraction.reply(
+        `Canal de play setado para \`${(userInteraction.interaction.channel as TextChannel).name}\``
+      )
     } catch (err) {
-      msg.reply("Ocorreu um erro ao setar canal de play")
+      userInteraction.reply("Ocorreu um erro ao setar canal de play")
     }
-  },
+  }
 }

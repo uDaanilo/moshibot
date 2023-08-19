@@ -1,20 +1,21 @@
 import { EmbedBuilder } from "discord.js"
 import { palette } from "../../config"
-import { BaseCommand } from "../../types/global"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
+import { queueExistsOnGuild } from "../../utils/queueExistsOnGuild"
 import formatDuration from "../../utils/formatDuration"
-import queueExists from "../../utils/queueExists"
 
-export default <BaseCommand>{
-  name: "queue",
-  description: "Lista todas as musicas da playlist",
-  before(msg, next) {
-    if (!queueExists(msg))
-      return msg.reply(":warning: **|** Nao ha nenhuma musica na playlist para poder usar isso")
+export default class QueueCommand extends BaseCommand {
+  constructor() {
+    super({
+      name: "queue",
+      description: "Lista todas as musicas da playlist",
+      before: [queueExistsOnGuild],
+    })
+  }
 
-    return next()
-  },
-  async run(msg) {
-    const { player } = msg.guild
+  public async run(userInteraction: UserInteraction) {
+    const { player } = userInteraction.interaction.guild
     const npTrack = player.queue.playingNow
     const queueSpliced = [...player.queue.tracks]
     queueSpliced.splice(10)
@@ -46,6 +47,6 @@ export default <BaseCommand>{
         iconURL: npTrack.metadata?.requester.avatarURL(),
       })
 
-    msg.reply({ embeds: [embed] })
-  },
+    userInteraction.reply({ embeds: [embed] })
+  }
 }

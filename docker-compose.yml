@@ -6,7 +6,6 @@ services:
       context: docker/
     entrypoint: docker/entrypoint.sh
     command: yarn dev
-    restart: always
     volumes:
       - .:/home/bot/moshi
     depends_on:
@@ -14,7 +13,6 @@ services:
 
   mongo:
     image: mongo:4.4.4
-    restart: always
     volumes:
       - ./docker/mongo/data:/data/db
     environment:

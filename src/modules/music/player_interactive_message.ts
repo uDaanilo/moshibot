@@ -9,20 +9,34 @@ export class PlayerInteractiveMessage {
   }
 
   public enable() {
-    this._guildPlayer.on("playing", this.listener.bind(this))
-    this._guildPlayer.on("finish", this.listener.bind(this))
-    this._guildPlayer.on("trackAdd", this.listener.bind(this))
-    this._guildPlayer.on("volumeChange", this.listener.bind(this))
-    this._guildPlayer.on("clearQueue", this.listener.bind(this))
-    this._guildPlayer.on("pause", this.listener.bind(this))
-    this._guildPlayer.on("resume", this.listener.bind(this))
-    this._guildPlayer.on("playlistAdd", this.listener.bind(this))
-    this._guildPlayer.on("repeat", this.listener.bind(this))
-    this._guildPlayer.on("shuffle", this.listener.bind(this))
-    this._guildPlayer.on("jump", this.listener.bind(this))
+    this._guildPlayer.on("playing", this.listener)
+    this._guildPlayer.on("finish", this.listener)
+    this._guildPlayer.on("trackAdd", this.listener)
+    this._guildPlayer.on("volumeChange", this.listener)
+    this._guildPlayer.on("clearQueue", this.listener)
+    this._guildPlayer.on("pause", this.listener)
+    this._guildPlayer.on("resume", this.listener)
+    this._guildPlayer.on("playlistAdd", this.listener)
+    this._guildPlayer.on("repeat", this.listener)
+    this._guildPlayer.on("shuffle", this.listener)
+    this._guildPlayer.on("jump", this.listener)
   }
 
-  private listener() {
+  public disable() {
+    this._guildPlayer.removeListener("playing", this.listener)
+    this._guildPlayer.removeListener("finish", this.listener)
+    this._guildPlayer.removeListener("trackAdd", this.listener)
+    this._guildPlayer.removeListener("volumeChange", this.listener)
+    this._guildPlayer.removeListener("clearQueue", this.listener)
+    this._guildPlayer.removeListener("pause", this.listener)
+    this._guildPlayer.removeListener("resume", this.listener)
+    this._guildPlayer.removeListener("playlistAdd", this.listener)
+    this._guildPlayer.removeListener("repeat", this.listener)
+    this._guildPlayer.removeListener("shuffle", this.listener)
+    this._guildPlayer.removeListener("jump", this.listener)
+  }
+
+  public listener = () => {
     this.update()
   }
 

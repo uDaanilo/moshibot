@@ -1,43 +1,47 @@
-import { Message } from "discord.js"
-import { Command } from "../types"
+import { ChannelType, Message } from "discord.js"
+import { EventHandler } from "./eventHandler"
+import { UserInteraction } from "../commands/userInteraction"
+import { PlayCommandOptions } from "../commands/music/play"
 
-const defaultPrefix = process.env.DEFAULT_PREFIX
+class MessageCreate implements EventHandler {
+  private readonly DEFAULT_PREFIX = process.env.DEFAULT_PREFIX
 
-function messageCreate(msg: Message) {
-  const isDefaultPrefix = msg.content.toLowerCase().startsWith(defaultPrefix)
-  const isGuildPrefix = msg.content.toLowerCase().startsWith(msg.guild.db.prefix)
+  public handle(msg: Message) {
+    if (msg.author.bot) return
+    if (msg.channel.type === ChannelType.DM) return
 
-  let args: string[]
+    const { client } = msg
+    const messageHasDefaultPrefix = msg.content.toLowerCase().startsWith(this.DEFAULT_PREFIX)
+    const messageHasGuildPrefix = msg.content.toLowerCase().startsWith(msg.guild.db.prefix)
+    let args: string[] = []
 
-  if (isGuildPrefix || isDefaultPrefix) {
-    args = msg.content
-      .trim()
-      .substr(isDefaultPrefix ? defaultPrefix.length : msg.guild.db.prefix.length)
-      .split(/ /g)
-  } else {
-    args = []
+    if (messageHasDefaultPrefix || messageHasGuildPrefix) {
+      args = msg.content
+        .trim()
+        .substr(messageHasDefaultPrefix ? this.DEFAULT_PREFIX.length : msg.guild.db.prefix.length)
+        .split(/ /g)
+    }
+
+    const commandName = args.shift()
+    const userInteraction = new UserInteraction(commandName, {}, msg)
+
+    if (
+      !commandName &&
+      !msg.attachments.size &&
+      msg.channel.id === msg.guild.db.playChannelId &&
+      process.env.NODE_ENV === "production"
+    ) {
+      userInteraction.options = {
+        nome: args.join(" "),
+      } as PlayCommandOptions
+      msg.guild.player.playOnVoiceChannel(userInteraction as UserInteraction<PlayCommandOptions>)
+      return
+    }
+
+    if (!commandName) return
+
+    client.commandsHandler.handle(userInteraction)
   }
-
-  const cmd = args.shift()
-
-  msg.args = args.join(" ")
-  msg.cmd = cmd
-  msg.canDeferReply = () => false
-
-  if (
-    !msg.cmd &&
-    !msg.args &&
-    !msg.attachments.size &&
-    msg.channel.id === msg.guild.db.playChannelId &&
-    process.env.NODE_ENV === "production"
-  ) {
-    msg.args = msg.content
-    msg.guild.player.playOnVoiceChannel(msg as Command)
-  }
-
-  if (!cmd) return
-
-  msg.client.commandsHandler.handle(msg)
 }
 
-export default messageCreate
+export default MessageCreate

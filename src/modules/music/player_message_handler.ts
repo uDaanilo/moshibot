@@ -1,10 +1,10 @@
 import formatDuration from "../../utils/formatDuration"
 import Track from "./track"
-import { Message, EmbedBuilder, TextChannel } from "discord.js"
+import { EmbedBuilder, Message, TextChannel } from "discord.js"
 import { palette } from "../../config"
-import { Command } from "../../types"
 import { logger } from "../../utils/logger"
 import { PlayerEvents } from "./player_event_emitter"
+import { UserInteraction } from "../../commands/userInteraction"
 
 export class PlayerMessageHandler implements PlayerEvents {
   constructor(private _textChannel?: TextChannel) {}
@@ -13,24 +13,24 @@ export class PlayerMessageHandler implements PlayerEvents {
     this._textChannel = textChannel
   }
 
-  private reply(msg: Command, options?: any) {
-    if (!msg && this._textChannel) {
+  private reply(userInteraction: UserInteraction, options?: any) {
+    if (!userInteraction && this._textChannel) {
       this._textChannel.send(options)
       return
-    } else if (!msg && !this._textChannel) {
+    } else if (!userInteraction && !this._textChannel) {
       return
     }
 
-    if (msg instanceof Message) msg.reply(options)
-    else msg.editReply(options)
+    if (userInteraction.interaction instanceof Message) userInteraction.interaction.reply(options)
+    else userInteraction.interaction.editReply(options)
   }
 
   private _getCommandFromTrack(track: Track) {
-    return track.metadata.command
+    return track.metadata.userInteraction
   }
 
   public trackAdd(track: Track): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
@@ -50,11 +50,11 @@ export class PlayerMessageHandler implements PlayerEvents {
         },
       ])
 
-    this.reply(cmd, { embeds: [embed] })
+    this.reply(userInteraction, { embeds: [embed] })
   }
 
   public playing(track: Track): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
@@ -74,54 +74,58 @@ export class PlayerMessageHandler implements PlayerEvents {
         },
       ])
 
-    this.reply(cmd, { embeds: [embed] })
+    this.reply(userInteraction, { embeds: [embed] })
   }
 
   public jump(track: Track): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
-    this.reply(cmd, `⏭️ **|** Pulando para **${track.title}**`)
+    this.reply(userInteraction, `⏭️ **|** Pulando para **${track.title}**`)
   }
 
   public pause(track: Track): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
-    this.reply(cmd, "⏸ **|** Musica pausada!")
+    this.reply(userInteraction, ":pause_button: **|** Musica pausada!")
   }
 
   public resume(track: Track): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
-    this.reply(cmd, ":arrow_forward: **|** Musica resumida!")
+    this.reply(userInteraction, ":arrow_forward: **|** Musica resumida!")
   }
 
   public volumeChange(track: Track, oldVol: number, newVol: number): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
     const emoji = newVol > oldVol ? ":loud_sound:" : ":sound:"
-    this.reply(cmd, `${emoji} **|** Volume alterado para **${newVol}%**`)
+    this.reply(userInteraction, `${emoji} **|** Volume alterado para **${newVol}%**`)
   }
 
   public repeat(track: Track): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
     this.reply(
-      cmd,
-      `:repeat: **|** Modo replay **${cmd.guild.player.repeat ? "ativado" : "desativado"}**`
+      userInteraction,
+      `:repeat: **|** Modo replay **${
+        userInteraction.interaction.guild.player.repeat ? "ativado" : "desativado"
+      }**`
     )
   }
 
   public shuffle(track: Track): void {
-    const cmd = this._getCommandFromTrack(track)
+    const userInteraction = this._getCommandFromTrack(track)
 
     this.reply(
-      cmd,
-      `🔁 **|** Modo repeticao **${cmd.guild.player.shuffle ? "ativado" : "desativado"}**`
+      userInteraction,
+      `🔁 **|** Modo repeticao **${
+        userInteraction.interaction.guild.player.shuffle ? "ativado" : "desativado"
+      }**`
     )
   }
 
   public playlistAdd(tracks: Track[]): void {
-    const cmd = this._getCommandFromTrack(tracks[0])
+    const userInteraction = this._getCommandFromTrack(tracks[0])
     const queueSpliced = [...tracks]
     queueSpliced.splice(10)
 
@@ -148,7 +152,7 @@ export class PlayerMessageHandler implements PlayerEvents {
         },
       ])
 
-    this.reply(cmd, { embeds: [embed] })
+    this.reply(userInteraction, { embeds: [embed] })
   }
 
   public clearQueue(): void {

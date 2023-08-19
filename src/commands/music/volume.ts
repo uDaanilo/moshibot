@@ -1,39 +1,40 @@
-import { CommandInteraction, Message } from "discord.js"
-import { BaseCommand, InteractionOptionType } from "../../types/global"
-import isOnVoiceChannel from "../../utils/isOnVoiceChannel"
-import queueExists from "../../utils/queueExists"
+import { InteractionOptionType } from "../../types/global"
+import { isOnVoiceChannel } from "../../utils/isOnVoiceChannel"
+import { queueExistsOnGuild } from "../../utils/queueExistsOnGuild"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "volume",
-  alias: "vol",
-  description: "Altera o volume",
-  args: "[0 - 100]",
-  options: [
-    {
+export type VolumeCommandOptions = {
+  volume?: number
+}
+
+export default class VolumeCommand extends BaseCommand {
+  constructor() {
+    super({
       name: "volume",
-      description: "Volume",
-      type: InteractionOptionType.INTEGER,
-    },
-  ],
-  async run(msg) {
-    if (!isOnVoiceChannel(msg))
-      return msg.reply(":warning: **|** Voce deve entrar em um canal de voz primeiro")
+      alias: "vol",
+      description: "Altera o volume",
+      args: "[0 - 100]",
+      options: [
+        {
+          name: "volume",
+          description: "Volume",
+          type: InteractionOptionType.INTEGER,
+        },
+      ],
+      before: [isOnVoiceChannel, queueExistsOnGuild],
+    })
+  }
 
-    if (!queueExists(msg)) {
-      return msg.reply(
-        ":warning: **|** Nao ha nenhuma musica na playlist para poder alterar o volume"
+  async run(userInteraction: UserInteraction<VolumeCommandOptions>) {
+    const { volume } = userInteraction.options
+
+    if (!volume) {
+      return userInteraction.reply(
+        `:loud_sound: **|** Volume atual: **${userInteraction.interaction.guild.player.volume}%**`
       )
     }
 
-    let volume = 0
-
-    if (msg instanceof Message) volume = msg.args ? Number(msg.args) : 0
-    else if (msg instanceof CommandInteraction && msg.isCommand())
-      volume = Number(msg.options.get("volume"))
-
-    if (!volume)
-      return msg.reply(`:loud_sound: **|** Volume atual: **${msg.guild.player.volume}%**`)
-
-    msg.guild.player.setVolume(volume)
-  },
+    userInteraction.interaction.guild.player.setVolume(+volume)
+  }
 }
