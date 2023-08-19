@@ -10,7 +10,7 @@ export class BasePlayer extends PlayerEventEmitter {
   public shuffle = false
   public repeat = false
   public audioFilters: string[] = []
-  private _currentAudioStream: Readable | PassThrough = null
+  private _currentAudioStream: Readable | PassThrough | null = null
 
   public get currentAudioStream() {
     return this._currentAudioStream

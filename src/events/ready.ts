@@ -1,16 +1,26 @@
 import { ActivityOptions, ActivityType, Client } from "discord.js"
 import Guild from "../db/models/Guild"
 import { logger } from "../utils/logger"
+import GuildPlayer from "../modules/music/guild_player"
+import { EventHandler } from "./eventHandler"
+import CommandsHandler from "../commands"
 
-class Ready {
+class Ready implements EventHandler {
   constructor(private client: Client) {}
 
   public handle() {
     logger.info("[BOT] Ready!")
     logger.info(`[BOT] Logged as ${this.client.user.username}`)
 
+    this.startCommandsHandler()
     this.setStatus(15)
-    this.setDatabaseInfoIntoGuildCollection()
+    this.setDatabaseInfoIntoGuildCollection().then(() => {
+      this.setGuildPlayers()
+    })
+  }
+
+  private startCommandsHandler() {
+    this.client.commandsHandler = new CommandsHandler()
   }
 
   private setStatus(interval: number): void {
@@ -64,6 +74,12 @@ class Ready {
         }
       })
     )
+  }
+
+  private setGuildPlayers() {
+    this.client.guilds.cache.forEach((g) => {
+      g.player = new GuildPlayer(g)
+    })
   }
 }
 

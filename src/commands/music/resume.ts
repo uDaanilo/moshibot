@@ -1,17 +1,18 @@
-import { BaseCommand } from "../../types/global"
-import isOnVoiceChannel from "../../utils/isOnVoiceChannel"
-import queueExists from "../../utils/queueExists"
+import { isOnVoiceChannel } from "../../utils/isOnVoiceChannel"
+import { queueExistsOnGuild } from "../../utils/queueExistsOnGuild"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "resume",
-  description: "Resume a musica tocando",
-  async run(msg) {
-    if (!isOnVoiceChannel(msg))
-      return msg.reply(":warning: **|** Voce deve entrar em um canal de voz primeiro")
+export default class ResumeCommand extends BaseCommand {
+  constructor() {
+    super({
+      name: "resume",
+      description: "Resume a musica tocando",
+      before: [isOnVoiceChannel, queueExistsOnGuild],
+    })
+  }
 
-    if (!queueExists(msg))
-      return msg.reply(":warning: **|** Nao ha nenhuma musica na playlist para poder resumir")
-
-    msg.guild.player.resume()
-  },
+  async run(userInteraction: UserInteraction) {
+    userInteraction.interaction.guild.player.resume()
+  }
 }

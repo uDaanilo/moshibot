@@ -1,64 +1,68 @@
 import { ButtonInteraction } from "discord.js"
-import { Command } from "../types"
 import isOnVoiceChannel from "../utils/isOnVoiceChannel"
-import queueExists from "../utils/queueExists"
+import queueExists from "../utils/queueExistsOnGuild"
+import { UserInteraction } from "../commands/userInteraction"
 
-export default function (btn: ButtonInteraction) {
-  ;(btn as Command).canDeferReply = () => false
-  const { player } = btn.guild
+export default function (userInteraction: UserInteraction<any, ButtonInteraction>) {
+  const { interaction } = userInteraction
+  const { player } = interaction.guild
 
-  if (!isOnVoiceChannel(btn as Command)) {
-    btn.reply(
-      `:warning: **|** <@${btn.member.user.id}> Voce deve entrar em um canal de voz primeiro`
+  if (!isOnVoiceChannel(interaction)) {
+    userInteraction.reply(
+      `:warning: **|** <@${interaction.member.user.id}> Voce deve entrar em um canal de voz primeiro`
     )
-    setTimeout(() => btn.deleteReply(), 15000)
+    setTimeout(() => interaction.deleteReply(), 15000)
     return
   }
 
-  if (!queueExists(btn as Command)) {
-    btn.reply(
-      `:warning: **|** <@${btn.member.user.id}> Nao ha nada tocando para que seja possivel completar essa acao`
+  if (!queueExists(interaction)) {
+    userInteraction.reply(
+      `:warning: **|** <@${interaction.member.user.id}> Nao ha nada tocando para que seja possivel completar essa acao`
     )
-    setTimeout(() => btn.deleteReply(), 15000)
+    setTimeout(() => interaction.deleteReply(), 15000)
     return
   }
 
-  if (btn.customId === "playpause") {
+  if (interaction.customId === "playpause") {
     if (player.playing) {
       player.pause()
-      btn.reply(`⏸ **|** <@${btn.member.user.id}>, Musica pausada!`)
+      userInteraction.reply(
+        `:pause_button: **|** <@${interaction.member.user.id}>, Musica pausada!`
+      )
     } else {
       player.resume()
-      btn.reply(`:arrow_forward: **|** <@${btn.member.user.id}>, Musica resumida!`)
+      userInteraction.reply(
+        `:arrow_forward: **|** <@${interaction.member.user.id}>, Musica resumida!`
+      )
     }
   }
 
-  if (btn.customId === "next") {
+  if (interaction.customId === "next") {
     player.jump()
-    btn.reply(`:fast_forward: **|** <@${btn.member.user.id}> pulou de musica`)
+    interaction.reply(`:fast_forward: **|** <@${interaction.member.user.id}> pulou de musica`)
   }
 
-  if (btn.customId === "stop") {
+  if (interaction.customId === "stop") {
     player.stop()
-    btn.reply(`:fast_forward: **|** <@${btn.member.user.id}> excluiu a playlist`)
+    interaction.reply(`:fast_forward: **|** <@${interaction.member.user.id}> excluiu a playlist`)
   }
 
-  if (btn.customId === "shuffle") {
+  if (interaction.customId === "shuffle") {
     player.toggleShuffle()
-    btn.reply(
-      `:twisted_rightwards_arrows: **|** <@${btn.member.user.id}> ${
+    interaction.reply(
+      `:twisted_rightwards_arrows: **|** <@${interaction.member.user.id}> ${
         player.shuffle ? "ativou" : "desativou"
       } o modo aleatorio`
     )
   }
 
-  if (btn.customId === "repeat") {
+  if (interaction.customId === "repeat") {
     player.toggleRepeat()
-    btn.reply(
-      `:repeat: **|** <@${btn.member.user.id}> ${
+    interaction.reply(
+      `:repeat: **|** <@${interaction.member.user.id}> ${
         player.repeat ? "ativou" : "desativou"
       } o modo repeticao`
     )
   }
-  setTimeout(() => btn.deleteReply(), 15000)
+  setTimeout(() => interaction.deleteReply(), 15000)
 }

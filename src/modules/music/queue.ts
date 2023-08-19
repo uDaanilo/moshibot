@@ -49,6 +49,10 @@ class Queue {
     this._data = this._data.concat(tracks)
   }
 
+  public addOnTop(track: Track) {
+    this._data.unshift(track)
+  }
+
   public clear() {
     this._data = []
   }

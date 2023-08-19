@@ -11,10 +11,4 @@ declare module "discord.js" {
     db?: IGuild
     player?: GuildPlayer
   }
-
-  interface Message extends Message {
-    args?: string
-    cmd?: string
-    canDeferReply: () => false
-  }
 }

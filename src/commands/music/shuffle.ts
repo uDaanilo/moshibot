@@ -1,17 +1,18 @@
-import { BaseCommand } from "../../types/global"
-import isOnVoiceChannel from "../../utils/isOnVoiceChannel"
-import queueExists from "../../utils/queueExists"
+import { isOnVoiceChannel } from "../../utils/isOnVoiceChannel"
+import { queueExistsOnGuild } from "../../utils/queueExistsOnGuild"
+import { BaseCommand } from "../baseCommand"
+import { UserInteraction } from "../userInteraction"
 
-export default <BaseCommand>{
-  name: "shuffle",
-  description: "Ativa o modo aleatorio",
-  async run(msg) {
-    if (!isOnVoiceChannel(msg))
-      return msg.reply(":warning: **|** Voce deve entrar em um canal de voz primeiro")
+export default class ShuffleCommand extends BaseCommand {
+  constructor() {
+    super({
+      name: "shuffle",
+      description: "Ativa o modo aleatorio",
+      before: [isOnVoiceChannel, queueExistsOnGuild],
+    })
+  }
 
-    if (!queueExists(msg))
-      return msg.reply(":warning: **|** Nao ha nenhuma musica na playlist para poder usar isso")
-
-    msg.guild.player.toggleShuffle()
-  },
+  async run(userInteraction: UserInteraction) {
+    userInteraction.interaction.guild.player.toggleShuffle()
+  }
 }

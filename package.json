@@ -27,6 +27,7 @@
     "eslint": "^8.0.1",
     "fluent-ffmpeg": "^2.1.2",
     "mongoose": "^6.5.2",
+    "opusscript": "^0.1.0",
     "pino": "^6.13.3",
     "pino-pretty": "^7.0.1",
     "scdl-core": "^1.0.17",
