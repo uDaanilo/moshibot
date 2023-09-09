@@ -32,7 +32,7 @@ class MessageCreate implements EventHandler {
       process.env.NODE_ENV === "production"
     ) {
       userInteraction.options = {
-        nome: args.join(" "),
+        nome: msg.content,
       } as PlayCommandOptions
       msg.guild.player.playOnVoiceChannel(userInteraction as UserInteraction<PlayCommandOptions>)
       return
