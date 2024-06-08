@@ -3,9 +3,11 @@ version: "3"
 services:
   bot:
     build:
-      context: docker/
-    entrypoint: docker/entrypoint.sh
+      context: .
+      dockerfile: ./docker/Dockerfile
+    entrypoint: ./docker/entrypoint.sh
     command: yarn dev
+    env_file: ./.env
     volumes:
       - .:/home/bot/moshi
     depends_on:
@@ -13,6 +15,8 @@ services:
 
   mongo:
     image: mongo:4.4.4
+    ports:
+      - "27017:27017"
     volumes:
       - ./docker/mongo/data:/data/db
     environment:
