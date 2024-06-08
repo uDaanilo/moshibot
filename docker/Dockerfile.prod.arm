@@ -1,0 +1,36 @@
+FROM node:20.11 as builder
+
+WORKDIR /home/bot/moshi
+
+COPY . .
+
+RUN yarn
+RUN yarn build
+
+FROM arm64v8/alpine:3.17 as packages
+
+WORKDIR /home/bot/moshi
+
+COPY package.json yarn.lock ./
+
+RUN apk update && \
+    apk add python3 make g++ yarn && \
+    yarn global add node-gyp && \
+    yarn --prod
+
+FROM arm64v8/alpine:3.17
+
+RUN apk update && \
+    apk add ffmpeg python3 nodejs yarn make g++ && \
+    wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2023.07.06/yt-dlp && \
+    chmod +x /usr/local/bin/yt-dlp
+
+WORKDIR /home/bot/moshi
+
+COPY --from=packages /home/bot/moshi/node_modules ./node_modules
+COPY --from=builder /home/bot/moshi/package.json .
+COPY --from=builder /home/bot/moshi/dist ./dist
+
+RUN yarn global add node-gyp
+
+CMD [ "yarn", "start" ]
