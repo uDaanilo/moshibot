@@ -1,24 +1,34 @@
-FROM node:17 as builder
+FROM node:20.11 as builder
 
 WORKDIR /home/bot/moshi
 
 COPY . .
 
-RUN yarn --omit=dev
+RUN yarn
 RUN yarn build
-RUN rm -rf src/
 
-FROM node:17-alpine
-
-RUN apk update && \
-    apk add ffmpeg python3 libtool autoconf automake make g++
-
-RUN wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2023.07.06/yt-dlp
-    
-RUN chmod +x /usr/local/bin/yt-dlp
+FROM node:20.11-alpine as packages
 
 WORKDIR /home/bot/moshi
 
-COPY --from=builder /home/bot/moshi .
+RUN apk update && \
+    apk add python3 make g++
+
+COPY package.json yarn.lock ./
+
+RUN yarn --prod
+
+FROM node:20.11-alpine
+
+WORKDIR /home/bot/moshi
+
+COPY --from=packages /home/bot/moshi/node_modules ./node_modules
+COPY --from=builder /home/bot/moshi/package.json .
+COPY --from=builder /home/bot/moshi/dist ./dist
+
+RUN apk update && \
+    apk add ffmpeg python3 libtool autoconf automake make g++ && \
+    wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2023.07.06/yt-dlp && \
+    chmod +x /usr/local/bin/yt-dlp
 
 CMD [ "yarn", "start" ]
