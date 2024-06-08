@@ -25,3 +25,10 @@ jobs:
           file: "docker/Dockerfile.prod"
           push: true
           tags: udaanilo/moshi-bot:latest
+      - name: Build and push arm
+        id: docker_build-arm
+        uses: docker/build-push-action@v3
+        with:
+          file: "docker/Dockerfile.prod.arm"
+          push: true
+          tags: udaanilo/moshi-bot:prod-arm
