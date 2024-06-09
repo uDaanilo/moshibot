@@ -1,12 +1,11 @@
 import { readdirSync } from "fs"
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { REST } from "@discordjs/rest"
-import { Routes } from "discord-api-types/v9"
 import { logger } from "../utils/logger"
 import { InteractionOptionType } from "../types/global"
 import { join } from "path"
 import { UserInteraction } from "./userInteraction"
 import { BaseCommand } from "./baseCommand"
+import { REST, Routes } from "discord.js"
 
 class CommandsHandler {
   public modules = readdirSync(`${__dirname}`).filter(
@@ -17,7 +16,9 @@ class CommandsHandler {
 
   constructor() {
     this.registerCommands()
-    this.registerSlashCommands()
+      .then(() => {
+        this.registerSlashCommands()
+      })
   }
 
   private async registerCommands() {
@@ -63,7 +64,7 @@ class CommandsHandler {
                   opt
                     .setName(option.name)
                     .setDescription(option.description)
-                    .setRequired(option.required ? option.required : false)
+                    .setRequired(option.required ?? false)
                 )
                 break
               case InteractionOptionType.INTEGER:
@@ -72,7 +73,7 @@ class CommandsHandler {
                   opt
                     .setName(option.name)
                     .setDescription(option.description)
-                    .setRequired(option.required ? option.required : false)
+                    .setRequired(option.required ?? false)
                 )
                 break
               case InteractionOptionType.BOOLEAN:
@@ -80,7 +81,7 @@ class CommandsHandler {
                   opt
                     .setName(option.name)
                     .setDescription(option.description)
-                    .setRequired(option.required ? option.required : false)
+                    .setRequired(option.required ?? false)
                 )
                 break
               case InteractionOptionType.USER:
@@ -88,7 +89,7 @@ class CommandsHandler {
                   opt
                     .setName(option.name)
                     .setDescription(option.description)
-                    .setRequired(option.required ? option.required : false)
+                    .setRequired(option.required ?? false)
                 )
                 break
               case InteractionOptionType.CHANNEL:
@@ -96,7 +97,7 @@ class CommandsHandler {
                   opt
                     .setName(option.name)
                     .setDescription(option.description)
-                    .setRequired(option.required ? option.required : false)
+                    .setRequired(option.required ?? false)
                 )
                 break
               case InteractionOptionType.ROLE:
@@ -104,7 +105,7 @@ class CommandsHandler {
                   opt
                     .setName(option.name)
                     .setDescription(option.description)
-                    .setRequired(option.required ? option.required : false)
+                    .setRequired(option.required ?? false)
                 )
                 break
               case InteractionOptionType.MENTIONABLE:
@@ -112,7 +113,7 @@ class CommandsHandler {
                   opt
                     .setName(option.name)
                     .setDescription(option.description)
-                    .setRequired(option.required ? option.required : false)
+                    .setRequired(option.required ?? false)
                 )
                 break
             }
@@ -123,7 +124,7 @@ class CommandsHandler {
       })
     })
 
-    const rest = new REST({ version: "9" }).setToken(process.env.TOKEN)
+    const rest = new REST().setToken(process.env.TOKEN)
     try {
       if (process.env.NODE_ENV === "development") {
         rest

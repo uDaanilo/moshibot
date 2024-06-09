@@ -22,7 +22,7 @@ FROM arm64v8/alpine:3.17
 
 RUN apk update && \
     apk add ffmpeg python3 nodejs yarn make g++ && \
-    wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2023.07.06/yt-dlp && \
+    wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2024.05.27/yt-dlp && \
     chmod +x /usr/local/bin/yt-dlp
 
 WORKDIR /home/bot/moshi
