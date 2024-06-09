@@ -20,7 +20,7 @@ interface BaseCommandInput<T> {
   before?: BeforeCommand[]
 }
 
-export class BaseCommand<T extends Record<string, any> = Record<string, any>> {
+export abstract class BaseCommand<T extends Record<string, any> = Record<string, any>> {
   public readonly name: string
   public readonly description: string
   public readonly args?: string = ""
@@ -71,7 +71,5 @@ export class BaseCommand<T extends Record<string, any> = Record<string, any>> {
     }
   }
 
-  public async run(userInteraction: UserInteraction): Promise<any> {
-    throw new Error("Method not implemented.")
-  }
+  public abstract run(_userInteraction: UserInteraction): Promise<any>
 }
