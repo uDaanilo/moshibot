@@ -72,8 +72,8 @@ export class PlayerInteractiveMessage {
       ])
       .setTimestamp()
       .setFooter({
-        text: `${track.metadata?.requester.username}`,
-        iconURL: track.metadata?.requester.avatarURL(),
+        text: `${track.metadata?.requester?.username}`,
+        iconURL: track.metadata?.requester?.avatarURL() ?? undefined,
       })
 
     if (this._guildPlayer.repeat) {

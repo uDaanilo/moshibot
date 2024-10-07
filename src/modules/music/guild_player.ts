@@ -10,7 +10,7 @@ import {
   VoiceConnection,
   VoiceConnectionStatus,
 } from "@discordjs/voice"
-import { ChannelType, Guild, GuildMember, TextChannel, User } from "discord.js"
+import { ChannelType, Guild, GuildMember, Message, TextChannel, User } from "discord.js"
 import { PlayerMessageHandler } from "./player_message_handler"
 import { BasePlayer } from "./base_player"
 import { PlayerInteractiveMessage } from "./player_interactive_message"
@@ -20,13 +20,14 @@ import { UserInteraction } from "../../commands/userInteraction"
 import { PlayCommandOptions } from "../../commands/music/play"
 import Track from "./track"
 import TrackSearcher from "./track_searcher"
+import { SoundcloudProvider } from "./providers/soundcloud"
 
 class GuildPlayer extends BasePlayer {
   public audioPlayer = createAudioPlayer({ debug: process.env.NODE_ENV === "development" })
   public interactiveMessage?: PlayerInteractiveMessage
   private _volume = 0
   private _voiceConnection: VoiceConnection
-  private _audioResource: AudioResource = null
+  private _audioResource: AudioResource | null = null
   private _messageHandler: PlayerMessageHandler = new PlayerMessageHandler()
   private _skipped = false
   private _textChannel: TextChannel
@@ -48,6 +49,12 @@ class GuildPlayer extends BasePlayer {
     this.on("playlistAdd", (track) => this._messageHandler.playlistAdd(track))
     this.on("error", (track) => this._messageHandler.error(track))
 
+    this.audioPlayer.on(AudioPlayerStatus.Playing, () =>
+      this._onAudioPlayerPlaying(this.queue.playingNow)
+    )
+    this.audioPlayer.on(AudioPlayerStatus.Idle, () => this._onAudioPlayerIdle())
+    this.audioPlayer.on("error", (err) => this._onAudioPlayerError(err))
+
     this._setInteractiveMessage()
   }
 
@@ -55,15 +62,16 @@ class GuildPlayer extends BasePlayer {
     return this._volume
   }
 
-  public async playOnVoiceChannel(userInteraction: UserInteraction<PlayCommandOptions>) {
+  public async playOnVoiceChannel(userInteraction: UserInteraction<PlayCommandOptions, Message>) {
     userInteraction.deferReply()
 
     let tracks: Track[]
     try {
       const { nome: query } = userInteraction.options
+      const author = userInteraction.interaction.member as GuildMember
 
       tracks = await this.searchAndAddToQueue(query, {
-        requester: userInteraction.interaction.member.user as User,
+        requester: author.user as User,
         userInteraction,
       })
     } catch (err) {
@@ -74,22 +82,23 @@ class GuildPlayer extends BasePlayer {
 
     if (tracks.length > 1) this.emit("playlistAdd", tracks)
     if (tracks.length === 1) this.emit("trackAdd", tracks[0])
-    if (!this.playing) {
-      if (userInteraction.interaction.channel.type === ChannelType.GuildText) {
-        this._textChannel = userInteraction.interaction.channel
-        this._messageHandler.setTextChannel(this._textChannel)
-      }
-
-      this.playing = true
-      this._joinVoiceChannel(userInteraction)
-      this._voiceConnection.subscribe(this.audioPlayer)
-      this._playStream(userInteraction)
+    if (this.playing) return
+    if (userInteraction.interaction.channel.type === ChannelType.GuildText) {
+      this._textChannel = userInteraction.interaction.channel
+      this._messageHandler.setTextChannel(this._textChannel)
     }
+
+    this.playing = true
+    this._joinVoiceChannel(userInteraction)
+    this._voiceConnection.subscribe(this.audioPlayer)
+    this._playStream()
   }
 
   public async setVolume(vol: number) {
     if (typeof vol !== "number") throw new Error("Volume must be a numeric type")
     if (vol < 0) throw new Error("Volume must be major than 0")
+    if (!this._audioResource) throw new Error("AudioResource not found")
+    if (!this._audioResource.volume) throw new Error("AudioResource.volume not found")
 
     const oldVol = this._volume
     this._volume = vol
@@ -118,6 +127,9 @@ class GuildPlayer extends BasePlayer {
 
   private _joinVoiceChannel(cmd: UserInteraction) {
     const voiceState = (cmd.interaction.member as GuildMember).voice
+
+    if (!voiceState.channel) throw new Error("Voice channel not found")
+
     const connection = joinVoiceChannel({
       channelId: voiceState.channel.id,
       guildId: this.guild.id,
@@ -130,13 +142,12 @@ class GuildPlayer extends BasePlayer {
     })
   }
 
-  private async _playStream(cmd: UserInteraction) {
+  private async _playStream() {
     const track = this.queue.playingNow
     try {
       const stream = await this.play().catch(async (err) => {
         logger.error(err)
-        await this._trackStreamErrorHandler(track)
-        this._playStream(cmd)
+        return await this._trackStreamErrorHandler(track)
       })
 
       if (!stream) return
@@ -145,18 +156,22 @@ class GuildPlayer extends BasePlayer {
         inlineVolume: true,
         inputType: StreamType.WebmOpus,
       })
+
+      if (!this._audioResource.volume) throw new Error("AudioResource.volume not found")
+
       this._audioResource.volume.setVolumeLogarithmic(this.volume / 100)
     } catch (error) {
-      this.jump()
       logger.error(error)
+
+      this._textChannel.send(" :bangbang: **|** Erro ao tocar a música")
+
+      if (this.queue.tracks.length > 1) this.jump()
+      else this.disconnect()
+
       return
     }
 
     this.audioPlayer.play(this._audioResource)
-
-    this.audioPlayer.once(AudioPlayerStatus.Playing, () => this._onAudioPlayerPlaying(track))
-    this.audioPlayer.once(AudioPlayerStatus.Idle, () => this._onAudioPlayerIdle(cmd))
-    this.audioPlayer.once("error", (err) => this._onAudioPlayerError(err))
   }
 
   private _onAudioPlayerPlaying(track: Track) {
@@ -170,15 +185,15 @@ class GuildPlayer extends BasePlayer {
     logger.error(err)
   }
 
-  private _onAudioPlayerIdle(cmd: UserInteraction) {
-    this.audioFilters = null
+  private _onAudioPlayerIdle() {
+    this.audioFilters = []
 
     if (!this.repeat && !this._skipped) this.queue.next()
     this._skipped = false
     if (this.queue.empty) return this.disconnect()
     if (this.shuffle && !this.repeat) this.queue.setRandomTrackToFirst()
 
-    this._playStream(cmd)
+    this._playStream()
   }
 
   public disconnect() {
@@ -209,12 +224,15 @@ class GuildPlayer extends BasePlayer {
   private async _trackStreamErrorHandler(track: Track) {
     if (track.provider instanceof YoutubeProvider) {
       const scTrack = await TrackSearcher.search(
-        (`${track.author} ${track.title}` || track.searchQuery) + " --sc",
-        track.metadata
+        track.searchQuery,
+        track.metadata,
+        new SoundcloudProvider()
       )
-      this.queue.next()
-      this.queue.addOnTop(scTrack[0])
-      return
+
+      if (scTrack.length === 0)
+        throw new Error(`Cannot find track stream with ${track.searchQuery} on soundcloud query`)
+
+      return scTrack[0].stream()
     }
 
     throw new Error(`Cannot handle track stream with ${track.searchQuery} query`)

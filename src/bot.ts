@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from "discord.js"
+import { Client, GatewayIntentBits, Message } from "discord.js"
 import Ready from "./events/ready"
 import MessageCreate from "./events/messageCreate"
 import { InteractionHandler } from "./events/interactionHandler"
@@ -24,7 +24,7 @@ client.on("interactionCreate", async (interaction) => {
   interactionHandler.handle(interaction)
 })
 
-client.on("messageCreate", (msg) => {
+client.on("messageCreate", (msg: Message<true>) => {
   const messageHandler = new MessageCreate()
   messageHandler.handle(msg)
 })

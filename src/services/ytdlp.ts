@@ -88,7 +88,7 @@ export interface Playlist {
 class YoutubeDlp {
   static ytdlp(args) {
     if (process.env.NODE_ENV !== "development") args.push("-q")
-
+    args.push("-q")
     return childProcess.spawn("yt-dlp", args)
   }
 

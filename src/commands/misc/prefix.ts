@@ -30,7 +30,7 @@ export default class PrefixCommand extends BaseCommand<PrefixCommandOptions> {
     const { prefixo: prefix } = userInteraction.options
 
     if (!prefix)
-      return userInteraction.reply(`:gear: **|** Prefixo atual: ${interaction.guild.db.prefix}`)
+      return userInteraction.reply(`:gear: **|** Prefixo atual: ${userInteraction.guild.db.prefix}`)
 
     if (!(interaction.member as GuildMember).permissions.has(PermissionFlagsBits.ManageMessages)) {
       return userInteraction.reply(
@@ -41,12 +41,13 @@ export default class PrefixCommand extends BaseCommand<PrefixCommandOptions> {
       return userInteraction.reply(":gear: **|** O prefixo deve conter no máximo 2 caracteres")
 
     try {
-      await Guild.updateOne({ id: interaction.guild.id }, { prefix })
-      const updatedGuild = await Guild.findOne({ id: interaction.guild.id })
+      await Guild.updateOne({ id: userInteraction.guild.id }, { prefix })
+      const updatedGuild = await Guild.findOne({ id: userInteraction.guild.id })
 
-      interaction.guild.db = updatedGuild
+      if (!updatedGuild) throw new Error("Guild not found on database")
+      userInteraction.guild.db = updatedGuild
 
-      interaction.client.guilds.cache.set(interaction.guild.id, interaction.guild)
+      interaction.client.guilds.cache.set(userInteraction.guild.id, userInteraction.guild)
 
       userInteraction.reply(`:gear: **|** Prefixo alterado para **${prefix}**`)
     } catch (err) {

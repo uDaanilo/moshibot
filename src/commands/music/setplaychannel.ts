@@ -12,6 +12,9 @@ export default class SetPlayChannelCommand extends BaseCommand {
   }
 
   async run(userInteraction: UserInteraction) {
+    if (!userInteraction.interaction.guild) throw new Error("Guild not found")
+    if (!userInteraction.interaction.channel) throw new Error("Channel not found")
+
     try {
       await Guild.updateOne(
         { id: userInteraction.interaction.guild.id },

@@ -12,7 +12,7 @@ export default class EvalCommand extends BaseCommand {
     })
   }
 
-  public async run({ interaction: msg }: UserInteraction<null, Message>): Promise<void> {
+  public async run({ interaction: msg }: UserInteraction<{}, Message>): Promise<void> {
     if (!(msg instanceof Message)) return
     const code = msg.content.split("eval ")[1]
 

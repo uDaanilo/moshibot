@@ -20,7 +20,7 @@ export default class HelpCommand extends BaseCommand {
       .setThumbnail(interaction.client.user.avatarURL())
       .setColor("#7289DA")
       .setFooter({
-        text: `Prefixo: ${interaction.guild.db.prefix}`,
+        text: `Prefixo: ${userInteraction.guild.db.prefix}`,
       }).setDescription(`
         <> Argumentos requiridos
         [] Argumentos opcionais

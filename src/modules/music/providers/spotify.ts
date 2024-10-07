@@ -65,6 +65,8 @@ export class SpotifyProvider implements BaseProvider {
 
       return this.getByUrl(query)
     }
+
+    return []
   }
 
   public searchByKeyword(keyword: string): Promise<TrackBase[]> {
@@ -82,7 +84,7 @@ export class SpotifyProvider implements BaseProvider {
 
       return [
         {
-          title: youtubeTrack.title,
+          title: youtubeTrack.title ?? "Unknown title",
           searchQuery: url,
           url: youtubeTrack.url,
           duration: youtubeTrack.duration / 1000,
@@ -112,7 +114,7 @@ export class SpotifyProvider implements BaseProvider {
             url: youtubeTrack.url,
             duration: youtubeTrack.duration / 1000,
             author: track.artist,
-            thumbnail: youtubeTrack.thumbnail.displayThumbnailURL(),
+            thumbnail: youtubeTrack.thumbnail?.displayThumbnailURL(),
           }
         })
       )

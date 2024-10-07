@@ -13,6 +13,6 @@ export default class ResumeCommand extends BaseCommand {
   }
 
   async run(userInteraction: UserInteraction) {
-    userInteraction.interaction.guild.player.resume()
+    userInteraction.interaction.guild?.player.resume()
   }
 }

@@ -1,4 +1,4 @@
-FROM node:20.11 as builder
+FROM node:20.11 AS builder
 
 WORKDIR /home/bot/moshi
 
@@ -7,7 +7,7 @@ COPY . .
 RUN yarn
 RUN yarn build
 
-FROM node:20.11-alpine as packages
+FROM node:20.11-alpine AS packages
 
 WORKDIR /home/bot/moshi
 
@@ -25,10 +25,16 @@ WORKDIR /home/bot/moshi
 COPY --from=packages /home/bot/moshi/node_modules ./node_modules
 COPY --from=builder /home/bot/moshi/package.json .
 COPY --from=builder /home/bot/moshi/dist ./dist
+COPY --from=builder /home/bot/moshi/docker/entrypoint.sh .
+COPY --from=builder /home/bot/moshi/docker/update-ytdlp.sh .
 
 RUN apk update && \
-    apk add ffmpeg python3 libtool autoconf automake make g++ && \
-    wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2024.05.27/yt-dlp && \
-    chmod +x /usr/local/bin/yt-dlp
+    apk add ffmpeg python3 jq libtool autoconf automake make g++ && \
+    wget -O /usr/local/bin/yt-dlp  https://github.com/yt-dlp/yt-dlp/releases/download/2024.09.27/yt-dlp && \
+    chmod +x /usr/local/bin/yt-dlp && \
+    chmod +x /home/bot/moshi/entrypoint.sh && \
+    chmod +x /home/bot/moshi/update-ytdlp.sh
+
+ENTRYPOINT [ "./entrypoint.sh" ]
 
 CMD [ "yarn", "start" ]

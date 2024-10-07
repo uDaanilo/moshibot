@@ -1,6 +1,6 @@
 import formatDuration from "../../utils/formatDuration"
 import Track from "./track"
-import { EmbedBuilder, Message, TextChannel } from "discord.js"
+import { EmbedBuilder, Guild, Message, TextChannel } from "discord.js"
 import { palette } from "../../config"
 import { logger } from "../../utils/logger"
 import { PlayerEvents } from "./player_event_emitter"
@@ -26,6 +26,7 @@ export class PlayerMessageHandler implements PlayerEvents {
   }
 
   private _getCommandFromTrack(track: Track) {
+    if (!track.metadata.userInteraction) throw new Error("UserInteraction not found")
     return track.metadata.userInteraction
   }
 
@@ -34,7 +35,7 @@ export class PlayerMessageHandler implements PlayerEvents {
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
-      .setAuthor({ name: "Adicionada", iconURL: track.metadata?.requester.avatarURL() })
+      .setAuthor({ name: "Adicionada", iconURL: track.metadata?.requester?.avatarURL() ?? "" })
       .setDescription(`[${track.title}](${track.url})`)
       .setThumbnail(track.thumbnail)
       .addFields([
@@ -58,7 +59,10 @@ export class PlayerMessageHandler implements PlayerEvents {
 
     const embed = new EmbedBuilder()
       .setColor(palette.embed.main)
-      .setAuthor({ name: "Tocando agora", iconURL: track.metadata?.requester.avatarURL() })
+      .setAuthor({
+        name: "Tocando agora",
+        iconURL: track.metadata?.requester?.avatarURL() ?? "",
+      })
       .setDescription(`[${track.title}](${track.url})`)
       .setThumbnail(track.thumbnail)
       .addFields([
@@ -104,23 +108,21 @@ export class PlayerMessageHandler implements PlayerEvents {
 
   public repeat(track: Track): void {
     const userInteraction = this._getCommandFromTrack(track)
+    const guild = userInteraction.interaction.guild as Guild
 
     this.reply(
       userInteraction,
-      `:repeat: **|** Modo replay **${
-        userInteraction.interaction.guild.player.repeat ? "ativado" : "desativado"
-      }**`
+      `:repeat: **|** Modo replay **${guild.player.repeat ? "ativado" : "desativado"}**`
     )
   }
 
   public shuffle(track: Track): void {
     const userInteraction = this._getCommandFromTrack(track)
+    const guild = userInteraction.interaction.guild as Guild
 
     this.reply(
       userInteraction,
-      `🔁 **|** Modo repeticao **${
-        userInteraction.interaction.guild.player.shuffle ? "ativado" : "desativado"
-      }**`
+      `🔁 **|** Modo repeticao **${guild.player.shuffle ? "ativado" : "desativado"}**`
     )
   }
 
@@ -156,7 +158,7 @@ export class PlayerMessageHandler implements PlayerEvents {
   }
 
   public clearQueue(): void {
-    this._textChannel.send("⏹️ **|** Playlist excluida")
+    if (this._textChannel) this._textChannel.send("⏹️ **|** Playlist excluida")
   }
 
   public error(err: any): void {

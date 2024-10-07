@@ -17,4 +17,4 @@ export type PlayerEvents = {
   finish: () => void
 }
 
-export class PlayerEventEmitter extends (EventEmitter as new () => TypedEmitter<PlayerEvents>) {}
+export class PlayerEventEmitter extends (EventEmitter as unknown as new () => TypedEmitter<PlayerEvents>) {}
