@@ -3,6 +3,7 @@ import { BaseCommand } from "../baseCommand"
 import { UserInteraction } from "../userInteraction"
 import { isOnVoiceChannel } from "../../utils/isOnVoiceChannel"
 import { queueExistsOnGuild } from "../../utils/queueExistsOnGuild"
+import { Guild } from "discord.js"
 
 export type SkipCommandOptions = {
   numero?: number
@@ -26,12 +27,12 @@ export default class SkipCommand extends BaseCommand {
   }
 
   public async run(userInteraction: UserInteraction<SkipCommandOptions>): Promise<any> {
-    const { player } = userInteraction.interaction.guild
+    const { player } = userInteraction.interaction.guild as Guild
     let { numero: index } = userInteraction.options
 
-    index = +index - 1
-
     if (index && index >= 1) {
+      index = +index - 1
+
       if (index >= player.queue.tracks.length)
         return userInteraction.reply(":warning: **|** Argumento invalido")
 

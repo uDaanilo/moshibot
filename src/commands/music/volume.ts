@@ -31,10 +31,10 @@ export default class VolumeCommand extends BaseCommand {
 
     if (!volume) {
       return userInteraction.reply(
-        `:loud_sound: **|** Volume atual: **${userInteraction.interaction.guild.player.volume}%**`
+        `:loud_sound: **|** Volume atual: **${userInteraction.interaction.guild?.player.volume}%**`
       )
     }
 
-    userInteraction.interaction.guild.player.setVolume(+volume)
+    userInteraction.interaction.guild?.player.setVolume(+volume)
   }
 }

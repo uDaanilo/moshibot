@@ -55,7 +55,7 @@ export class SoundcloudProvider implements BaseProvider {
         author: track.user.username,
         duration: track.duration / 1000,
         searchQuery: url,
-        thumbnail: track.artwork_url,
+        thumbnail: track.artwork_url ?? "",
         title: track.title,
         url: track.permalink_url,
       },

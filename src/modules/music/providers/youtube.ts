@@ -29,14 +29,17 @@ export class YoutubeProvider implements BaseProvider {
 
     if (!videosInfo.length) return []
 
-    const tracks = videosInfo.map((video) => ({
-      title: video.title,
-      searchQuery: keyword,
-      url: video.url,
-      author: video.channel.name,
-      duration: video.duration / 1000,
-      thumbnail: video.thumbnail.displayThumbnailURL("maxresdefault"),
-    }))
+    const tracks = videosInfo.map(
+      (video) =>
+        ({
+          title: video.title,
+          searchQuery: keyword,
+          url: video.url,
+          author: video.channel?.name,
+          duration: video.duration / 1000,
+          thumbnail: video.thumbnail?.displayThumbnailURL("maxresdefault"),
+        } as TrackBase)
+    )
 
     return tracks
   }
@@ -53,7 +56,7 @@ export class YoutubeProvider implements BaseProvider {
         url: videoInfo.url ?? videoInfo.original_url,
         author: videoInfo.artist ?? videoInfo.uploader,
         duration: videoInfo.duration,
-        thumbnail: videoInfo.thumbnails.pop().url,
+        thumbnail: videoInfo.thumbnails.pop()?.url ?? "",
       },
     ]
   }
@@ -63,14 +66,17 @@ export class YoutubeProvider implements BaseProvider {
 
     if (!playlistInfo) return []
 
-    const tracks = playlistInfo.videos.map((v) => ({
-      title: v.title,
-      searchQuery: url,
-      url: v.url,
-      author: v.channel.name,
-      duration: v.duration / 1000,
-      thumbnail: v.thumbnail.displayThumbnailURL("maxresdefault"),
-    }))
+    const tracks = playlistInfo.videos.map(
+      (v) =>
+        ({
+          title: v.title,
+          searchQuery: url,
+          url: v.url,
+          author: v.channel?.name,
+          duration: v.duration / 1000,
+          thumbnail: v.thumbnail?.displayThumbnailURL("maxresdefault"),
+        } as TrackBase)
+    )
 
     return tracks
   }

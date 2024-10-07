@@ -21,27 +21,27 @@ export default class SetPlayerChannelCommand extends BaseCommand {
     const stopButton = new ButtonBuilder()
       .setCustomId("stop")
       .setStyle(ButtonStyle.Primary)
-      .setEmoji("<:stop:897107010666000394>")
+      .setEmoji("897107010666000394")
 
     const shuffleButton = new ButtonBuilder()
       .setCustomId("shuffle")
       .setStyle(ButtonStyle.Primary)
-      .setEmoji("<:shuffle:863732595782844426>")
+      .setEmoji("1292630553006444595")
 
     const repeatButton = new ButtonBuilder()
       .setCustomId("repeat")
       .setStyle(ButtonStyle.Primary)
-      .setEmoji("<:repeat:863732580665524224>")
+      .setEmoji("863732580665524224")
 
     const playpauseButton = new ButtonBuilder()
       .setCustomId("playpause")
       .setStyle(ButtonStyle.Primary)
-      .setEmoji("<:play_pause:859265510516588575>")
+      .setEmoji("859265510516588575")
 
     const nextButton = new ButtonBuilder()
       .setCustomId("next")
       .setStyle(ButtonStyle.Primary)
-      .setEmoji("<:skip_next:859265681451515906>")
+      .setEmoji("859265681451515906")
 
     const row = new ActionRowBuilder().addComponents([
       stopButton,
@@ -52,25 +52,27 @@ export default class SetPlayerChannelCommand extends BaseCommand {
     ])
 
     // @ts-ignore
-    userInteraction.reply({ embeds: [embed], components: [row] }).then(async (msg) => {
+    await userInteraction.reply({ embeds: [embed], components: [row] }).then(async (msg) => {
       const channelId = msg instanceof Message ? msg.channelId : msg.interaction.channelId
       const messageId = msg instanceof Message ? msg.id : (await msg.fetch()).id
 
       try {
         await Guild.updateOne(
-          { id: userInteraction.interaction.guild.id },
+          { id: userInteraction.guild.id },
           { playerChannel: { ch: channelId, msg: messageId } }
         )
-        const guildDb = await Guild.findOne({ id: userInteraction.interaction.guild.id })
+        const guildDb = await Guild.findOne({ id: userInteraction.guild.id })
 
-        userInteraction.interaction.guild.db = guildDb
+        if (!guildDb) throw new Error("Guild not found on database")
+
+        userInteraction.guild.db = guildDb
 
         userInteraction.interaction.client.guilds.cache.set(
-          userInteraction.interaction.guild.id,
-          userInteraction.interaction.guild
+          userInteraction.guild.id,
+          userInteraction.guild
         )
 
-        userInteraction.interaction.guild.player.reloadInteractiveMessage()
+        userInteraction.guild.player.reloadInteractiveMessage()
       } catch (err) {
         logger.error(err)
       }

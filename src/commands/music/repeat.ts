@@ -14,6 +14,6 @@ export default class RepeatCommand extends BaseCommand {
   }
 
   async run(userInteraction: UserInteraction) {
-    userInteraction.interaction.guild.player.toggleRepeat()
+    userInteraction.interaction.guild?.player.toggleRepeat()
   }
 }

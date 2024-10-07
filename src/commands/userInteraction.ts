@@ -1,6 +1,7 @@
 import {
   ButtonInteraction,
   CommandInteraction,
+  Guild,
   InteractionReplyOptions,
   Message,
   MessageComponentInteraction,
@@ -18,13 +19,19 @@ export class UserInteraction<
   OptionsType extends { [k: string]: string | number } = Record<string, string>,
   InteractionType extends InteractionTypeDefault = InteractionTypeDefault
 > {
+  public readonly guild: Guild
+
   constructor(
     public readonly commandName: string,
     public options: OptionsType = {} as OptionsType,
     public readonly interaction: InteractionType extends null
       ? InteractionTypeDefault
       : InteractionType
-  ) {}
+  ) {
+    if (!(interaction.guild instanceof Guild)) throw new Error("Interaction.guild is mandatory")
+
+    this.guild = interaction.guild
+  }
 
   public async reply(
     options: string | InteractionReplyOptions | MessagePayload

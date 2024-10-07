@@ -34,25 +34,27 @@ export class BasePlayer extends PlayerEventEmitter {
   public stop() {
     this.playing = false
     this.queue.clear()
-    this._currentAudioStream.destroy()
+    this._currentAudioStream?.destroy()
     this.emit("clearQueue")
   }
 
   public pause() {
     this.playing = false
-    this._currentAudioStream.pause()
+    this._currentAudioStream?.pause()
     this.emit("pause", this.queue.playingNow)
   }
 
   public resume() {
     this.playing = true
-    this._currentAudioStream.resume()
+    this._currentAudioStream?.resume()
     this.emit("resume", this.queue.playingNow)
   }
 
   public jump(to: number = 1) {
+    if (this.queue.tracks.length < to) return
+
     this.queue.jumpTo(to)
-    this._currentAudioStream.destroy()
+    this._currentAudioStream?.destroy()
     this.emit("jump", this.queue.playingNow)
     return this.queue.tracks[1]
   }

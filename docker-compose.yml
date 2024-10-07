@@ -5,9 +5,11 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-    entrypoint: ./docker/entrypoint.sh
-    command: yarn dev
+    entrypoint: ./docker/entrypoint-dev.sh
+    command: yarn dev:debug
     env_file: ./.env
+    ports:
+      - 9229:9229
     volumes:
       - .:/home/bot/moshi
     depends_on:

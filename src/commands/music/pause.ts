@@ -13,6 +13,6 @@ export default class PauseCommand extends BaseCommand {
   }
 
   public async run(userInteraction: UserInteraction) {
-    userInteraction.interaction.guild.player.pause()
+    userInteraction.interaction.guild?.player.pause()
   }
 }

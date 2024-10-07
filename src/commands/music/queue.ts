@@ -1,4 +1,4 @@
-import { EmbedBuilder } from "discord.js"
+import { EmbedBuilder, Guild } from "discord.js"
 import { palette } from "../../config"
 import { BaseCommand } from "../baseCommand"
 import { UserInteraction } from "../userInteraction"
@@ -15,7 +15,7 @@ export default class QueueCommand extends BaseCommand {
   }
 
   public async run(userInteraction: UserInteraction) {
-    const { player } = userInteraction.interaction.guild
+    const { player } = userInteraction.interaction.guild as Guild
     const npTrack = player.queue.playingNow
     const queueSpliced = [...player.queue.tracks]
     queueSpliced.splice(10)
@@ -43,8 +43,8 @@ export default class QueueCommand extends BaseCommand {
       ])
       .setTimestamp()
       .setFooter({
-        text: `${npTrack.metadata?.requester.username}`,
-        iconURL: npTrack.metadata?.requester.avatarURL(),
+        text: `${npTrack.metadata?.requester?.username}`,
+        iconURL: npTrack.metadata?.requester?.avatarURL() ?? "",
       })
 
     userInteraction.reply({ embeds: [embed] })

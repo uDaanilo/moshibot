@@ -6,7 +6,7 @@ import { EventHandler } from "./eventHandler"
 import CommandsHandler from "../commands"
 
 class Ready implements EventHandler {
-  constructor(private client: Client) {}
+  constructor(private client: Client<true>) {}
 
   public handle() {
     logger.info("[BOT] Ready!")
@@ -24,7 +24,7 @@ class Ready implements EventHandler {
   }
 
   private setStatus(interval: number): void {
-    let status: ActivityOptions[] = [
+    let status: Array<{ name: string; type: ActivityOptions["type"] }> = [
       {
         name: "você",
         type: ActivityType.Watching,

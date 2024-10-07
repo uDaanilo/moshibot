@@ -12,6 +12,6 @@ export default class StopCommand extends BaseCommand {
   }
 
   async run(userInteraction: UserInteraction) {
-    userInteraction.interaction.guild.player.disconnect()
+    userInteraction.interaction.guild?.player.disconnect()
   }
 }

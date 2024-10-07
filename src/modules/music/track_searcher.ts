@@ -5,17 +5,6 @@ import { SpotifyProvider } from "./providers/spotify"
 import ArbitraryProvider from "./providers/arbitrary"
 import { logger } from "../../utils/logger"
 
-function trackBuilder(tracksBase: TrackBase[], provider, metadata: TrackMetadata): Track[] {
-  return tracksBase.map(
-    (track) =>
-      new Track({
-        ...track,
-        provider,
-        metadata,
-      })
-  )
-}
-
 export class TrackNotfound extends Error {
   constructor() {
     super()
@@ -32,27 +21,49 @@ class TrackSearcher {
     new ArbitraryProvider(),
   ]
 
-  static async search(query: string, metadata: TrackMetadata): Promise<Track[]> {
+  private static buildTrack(tracksBase: TrackBase[], provider, metadata: TrackMetadata): Track[] {
+    return tracksBase.map(
+      (track) =>
+        new Track({
+          ...track,
+          provider,
+          metadata,
+        })
+    )
+  }
+
+  static async search(
+    query: string,
+    metadata: TrackMetadata,
+    provider?: (typeof this.providers)[number]
+  ): Promise<Track[]> {
     const tracks: Track[] = []
 
-    for (const provider of this.providers) {
-      for (const pattern of provider.urlPattern) {
-        if (pattern.test(query)) {
-          const foundTracks = await provider.search(query)
-          logger.info(
-            `Found ${foundTracks.length} tracks with query ${query} on ${provider.constructor.name} provider`
-          )
+    if (provider) {
+      const foundTracks = await provider.search(query)
+      logger.info(
+        `Found ${foundTracks.length} tracks with query ${query} on ${provider.constructor.name} provider`
+      )
 
-          tracks.push(...trackBuilder(foundTracks, provider, metadata))
+      tracks.push(...this.buildTrack(foundTracks, provider, metadata))
+    } else {
+      for (const provider of this.providers) {
+        for (const pattern of provider.urlPattern) {
+          if (pattern.test(query)) {
+            const foundTracks = await provider.search(query)
+            logger.info(
+              `Found ${foundTracks.length} tracks with query ${query} on ${provider.constructor.name} provider`
+            )
 
-          break
+            tracks.push(...this.buildTrack(foundTracks, provider, metadata))
+
+            break
+          }
         }
+
+        if (tracks.length) break
       }
-
-      if (tracks.length) break
     }
-
-    if (!tracks.length) throw new TrackNotfound()
 
     return tracks
   }

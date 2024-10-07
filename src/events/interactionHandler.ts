@@ -30,7 +30,7 @@ export class InteractionHandler implements EventHandler {
   }
 
   private handleButtonInteraction(buttonInteraction: ButtonInteraction) {
-    const command = new UserInteraction(buttonInteraction.customId, null, buttonInteraction)
+    const command = new UserInteraction(buttonInteraction.customId, {}, buttonInteraction)
     buttonInteractionHandler(command)
   }
 }

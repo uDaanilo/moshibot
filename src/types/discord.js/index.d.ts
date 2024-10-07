@@ -8,7 +8,7 @@ declare module "discord.js" {
   }
 
   interface Guild extends Guild {
-    db?: IGuild
-    player?: GuildPlayer
+    db: IGuild
+    player: GuildPlayer
   }
 }

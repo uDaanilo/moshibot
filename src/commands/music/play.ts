@@ -2,6 +2,7 @@ import {
   SelectMenuComponentOptionData,
   ActionRowBuilder,
   StringSelectMenuBuilder,
+  Message,
 } from "discord.js"
 import { isUrl } from "../../modules/music/providers/helpers"
 import { YoutubeProvider } from "../../modules/music/providers/youtube"
@@ -33,11 +34,11 @@ export default class PlayCommand extends BaseCommand<PlayCommandOptions> {
     })
   }
 
-  public async run(userInteraction: UserInteraction<PlayCommandOptions>) {
+  public async run(userInteraction: UserInteraction<PlayCommandOptions, Message>) {
     const { interaction } = userInteraction
 
     if (userInteraction.commandName === "p" || isUrl(userInteraction.options.nome))
-      return interaction.guild.player.playOnVoiceChannel(userInteraction)
+      return interaction.guild?.player.playOnVoiceChannel(userInteraction)
 
     const tracks = await new YoutubeProvider().searchByKeyword(userInteraction.options.nome, 5)
     if (tracks.length === 0)

@@ -13,6 +13,6 @@ export default class ShuffleCommand extends BaseCommand {
   }
 
   async run(userInteraction: UserInteraction) {
-    userInteraction.interaction.guild.player.toggleShuffle()
+    userInteraction.interaction.guild?.player.toggleShuffle()
   }
 }
